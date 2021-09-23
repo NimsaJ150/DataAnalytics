@@ -27,7 +27,6 @@ jupyter_nbextensions_configurator
 jupyterlab
 jupyterlab_launcher
 ipykernel
-nb_conda_kernels
 tensorflow==1.8.0
 keras==2.1.6
 ipython
@@ -39,4 +38,5 @@ bottleneck
 networkx==1.11
 widgetsnbextension
 ipywidgets
-pandasy
+pandas
+nb_conda_kernels
