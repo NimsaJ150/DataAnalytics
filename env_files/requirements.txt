@@ -39,3 +39,4 @@ bottleneck
 networkx==1.11
 widgetsnbextension
 ipywidgets
+pandasy
