@@ -47,7 +47,7 @@ if not os.path.exists(filename):
     if not os.path.exists(PATH_DATA):
         os.mkdir(PATH_DATA)
     df_amz.to_pickle(filename)
-    
+
 else:
     display("Reading from hard drive..")
     df_amz = pd.read_pickle(filename)
@@ -60,9 +60,8 @@ df_amz.head()
 ---
 ## 2 Definitions
 
-define the not self-explanatory features.
-
 #%%
+#all parameters in original data
 
 column_list = [
     'ID',
@@ -114,6 +113,7 @@ column_list = [
     'Astronomical_Twilight'
 ]
 
+# defining all columns in original data with numeric values
 numeric_columns = [
     'Severity',
     'Start_Lat',
@@ -133,6 +133,7 @@ numeric_columns = [
     'Precipitation(in)'
 ]
 
+# defining wind values for value transformation (section 5.4.4)
 wind_values = {
     'North': 'N',
     'South': 'S',
@@ -161,7 +162,7 @@ data_ori.dtypes
 #%%
 
 # Features
-list(data_ori)  # What potential lies in the "Description"?
+list(data_ori)  # What potential lies in the "Description"? (?@luke)
 
 #%%
 
@@ -191,7 +192,26 @@ for column in column_list:  # list of columns
 #%% md
 
 ### 5.1 Drop columns
-TODO: explain why dropping for each column
+Dropping irrelevant columns.
+
+Reasons:
+    Description - contains unstructured text data (with typos) which contains information such as address/ zipcode which
+    are already present in the data set. Other information in this column such as exact names, details of those involved
+    etc are unimportant for our current project.
+
+    Number, Precipitation - too many NaN values, others mostly 0. Weather data already included in another column.
+
+    Turning_Loop - all values are 'False'. Will not make any change to model.
+
+    Timezone - our analysis will be based on local time. Timezone does not have any effect on accidents.
+
+    Airport_Code - Location of accident already included in data set. Airport code unimportant.
+
+    Weather_Timestamp - shows us exact time of weather measurement which all match day of accident. Unimportant for now.
+
+    Wind_Chill(F) - We already have weather data. Wind chill is calculated using temperature and wind speed which we
+                    already have in dataset. Affect of wind on skin is unimportant for accident rates.
+
 
 #%%
 
@@ -269,7 +289,6 @@ data_ori['Visibility(km)'] = data_ori['Visibility(mi)'] * 1.609
 # Pressure Pa -> in
 data_ori['Pressure(Pa)'] = data_ori['Pressure(in)'] / 29.92
 
-
 columns_to_drop = [
     'Distance(mi)',
     'Temperature(F)',
@@ -327,7 +346,7 @@ differentiate between corona and pre-corona times; include apple mobility data h
 #%%
 
 # display all value counts
-for column in data_prep: # list of columns
+for column in data_prep:  # list of columns
     print(data_prep[column].value_counts().sort_index(), "\n")
 
 #%%
@@ -439,14 +458,15 @@ data_prep.corr(method='spearman')
 #%%
 
 # to be adjusted:
-fig=plt.gcf()
-fig.set_size_inches(20,20)
-fig=sns.heatmap(data_prep.corr(),annot=True,linewidths=1,linecolor='k',square=True,mask=False, vmin=-1, vmax=1,cbar_kws={"orientation": "vertical"},cbar=True)
+fig = plt.gcf()
+fig.set_size_inches(20, 20)
+fig = sns.heatmap(data_prep.corr(), annot=True, linewidths=1, linecolor='k', square=True, mask=False, vmin=-1, vmax=1,
+                  cbar_kws={"orientation": "vertical"}, cbar=True)
 sns.set(style='ticks')
 sns.pairplot(data_prep)
 
 # US map simple: scatterplot based on latitude and longitude data, with correct alpha, to show densitiy
-sns.jointplot(x=data_prep.Start_Lng.values,y=data_prep.Start_Lat.values,height=8)
+sns.jointplot(x=data_prep.Start_Lng.values, y=data_prep.Start_Lat.values, height=8)
 plt.ylabel('Start_Lat', fontsize=12)
 plt.xlabel('Start_Lng', fontsize=12)
 plt.show()
@@ -515,5 +535,7 @@ TMC: NA is an important information
 ### 8.5 Prediction driving factors
 
 # SHAP diagram
+
+
 
 
