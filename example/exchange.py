@@ -312,20 +312,22 @@ data_ori.drop(columns=columns_to_drop, inplace=True)
 #%% md
 
 #### 5.4.3 Timestamp transformation
-TODO: explain
 
 #%%
 
+#converting from string type to datetime
 data_ori['Start_Time'] = pd.to_datetime(data_ori['Start_Time'])
 
+# creating columns for Section 6 analysis.
 data_ori['Weekday'] = data_ori['Start_Time'].dt.dayofweek  # Monday = 0
-data_ori['Month'] = data_ori['Start_Time'].dt.month  # Monday = 0
-data_ori['Hour'] = data_ori['Start_Time'].dt.hour  # Monday = 0
+data_ori['Month'] = data_ori['Start_Time'].dt.month
+data_ori['Hour'] = data_ori['Start_Time'].dt.hour
 
 #%% md
 
 #### 5.4.4 Wind direction transformation
-TODO: explain
+Converting overlapping values. For example: 'S' & 'South' mean the same thing so 'South' will be transformed to 'S'.
+Transformations based on wind_values dict.
 
 #%%
 
