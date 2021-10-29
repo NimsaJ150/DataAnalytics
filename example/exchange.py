@@ -234,7 +234,7 @@ data_ori.drop(columns=columns_to_drop, inplace=True)  # inplace -> no need to st
 
 #%%
 
-#TODO: Check for non and then drop
+#TODO: Check for non and then drop @J + I
 
 
 
@@ -242,15 +242,20 @@ data_ori.drop(columns=columns_to_drop, inplace=True)  # inplace -> no need to st
 
 ### 5.3 Drop incorrect values
 
+Some values recorded in this dataset are clearly incorrect. We choose to not include them in future calculations.
+
+These include:
+a) Temperature(F) - contains extreme values of temperature outside the range of recorded temperature values in the US
+from 2016 - 2020
+b) Wind_Speed(mph) - contains extreme values of wind speed outside the range of recorded speed values in the US
+from 2016 - 2020. Assuming vehicles involved in the accident were not literally inside a tornado/hurricane
 #%%
 
-# TODO: explain why dropping these values (extreme temp/wind)
-
-# Extreme Temperature -> 5 values
+# Extreme Temperature -> 5 rows dropped
 data_ori.drop(data_ori[(data_ori['Temperature(F)'] >= 168.8) | (data_ori['Temperature(F)'] <= -77.8)].index,
               inplace=True)
 
-# Extreme Wind_Speed -> 6 values
+# Extreme Wind_Speed -> 6 rows dropped
 data_ori.drop(data_ori[data_ori['Wind_Speed(mph)'] >= 471.8].index, inplace=True)
 
 #%% md
@@ -259,10 +264,12 @@ data_ori.drop(data_ori[data_ori['Wind_Speed(mph)'] >= 471.8].index, inplace=True
 
 #### 5.4.1 Zip Code
 
+Formatting all zipcodes in dataset to contain 5 digits only - basic US zipcode format. The extended ZIP+4 code present
+in a few of the rows is not necessary for our analysis.
 #%%
 
-# TODO: explanation
-data_ori['Zipcode'] = data_ori['Zipcode'].str[:5]  # take first 5 digits of zip code -> save it in column again
+# taking first 5 digits of zip code -> save it in Zipcode again
+data_ori['Zipcode'] = data_ori['Zipcode'].str[:5]
 
 
 #%% md
@@ -270,9 +277,11 @@ data_ori['Zipcode'] = data_ori['Zipcode'].str[:5]  # take first 5 digits of zip 
 #### 5.4.2 Unit conversion to SI units
 
 TODO: (Luke) fil End_lat and End_Lng by Start_Lat and Start_Lng (check prior what is the average difference between the two)
-
+#why ?
 
 #%%
+
+# new columns for each SI unit created
 
 # Distance miles -> kilometres
 data_ori['Distance(km)'] = data_ori['Distance(mi)'] * 1.609
@@ -289,6 +298,7 @@ data_ori['Visibility(km)'] = data_ori['Visibility(mi)'] * 1.609
 # Pressure Pa -> in
 data_ori['Pressure(Pa)'] = data_ori['Pressure(in)'] / 29.92
 
+# dropping previous columns with american units
 columns_to_drop = [
     'Distance(mi)',
     'Temperature(F)',
