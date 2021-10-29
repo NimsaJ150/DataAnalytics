@@ -76,6 +76,7 @@ target/
 
 # Jupyter Notebook
 .ipynb_checkpoints
+example/traffic_data.ipynb
 
 # IPython
 profile_default/
