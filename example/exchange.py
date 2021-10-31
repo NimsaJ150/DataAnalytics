@@ -143,6 +143,59 @@ wind_values = {
     'Variable': 'VAR',
 }
 
+weather_values = {
+    'Blowing': 'Blowing',
+    'Windy': 'Windy',
+    'Snow': 'Snow',
+    'Drifting': 'Drifting',
+    'Clear': 'Clear',
+    'Cloudy': 'Cloudy',
+    'Drizzle': 'Drizzle',
+    'Fog': 'Fog',
+    'Dust': 'Dust',
+    'Whirls': 'Whirls',
+    'Fair': 'Fair',
+    'Freezing': 'Freezing',
+    'Funnel Cloud': 'Funnel Cloud',
+    'Rain': 'Rain',
+    'Hail': 'Hail',
+    'Haze': 'Haze',
+    'Heavy': 'Heavy',
+    'Light': 'Light',
+    'Mist': 'Mist',
+    'Mostly Cloudy': 'Cloudy',
+    'Overcast': 'Overcast',
+    'Partial': 'Partial',
+    'Partly': 'Partial',  #
+    'Patches of Fog': 'Fog',  #
+    'Sand': 'Sand',
+    'Dusty': 'Dust',  #
+    'Whirls Nearby': 'Whirlwinds',  #
+    'Whirlwinds': 'Whirlwinds',
+    'Ice Pellets': 'Ice Pellets',
+    'Rain Shower': 'Rain',  #
+    'Rain Showers': 'Rain', #
+    'Snow Shower': 'Snow', #
+    'Snow Showers': 'Snow', #
+    'Scattered Clouds': 'Cloudy',  #
+    'Showers in the Vicinity': 'Rain',  #
+    'Sleet': 'Sleet',
+    'Small Hail': 'Hail',  #
+    'Wintry Mix': 'Wintry Mix',
+    'Thunder': 'Thunder',
+    'T-Storm': 'Thunder',  #
+    'Thunderstorm': 'Thunder',  #
+    'Thunderstorms': 'Thunder',  #
+    'Thunder in the Vicinity': 'Thunder',  #
+    'Tornado': 'Tornado',
+    'Smoke': 'Smoke',
+    'Shallow Fog': 'Fog',  #
+    'Snow Grains': 'Snow Grains',
+    'Squalls': 'Squalls',
+    'Widespread Dust': 'Dust',  #
+    'Volcanic Ash': 'Volcanic Ash',
+}
+
 #%% md
 
 ---
@@ -195,22 +248,22 @@ for column in column_list:  # list of columns
 Dropping irrelevant columns.
 
 Reasons:
-    Description - contains unstructured text data (with typos) which contains information such as address/ zipcode which
-    are already present in the data set. Other information in this column such as exact names, details of those involved
-    etc are unimportant for our current project.
+Description - contains unstructured text data (with typos) which contains information such as address/ zipcode which
+are already present in the data set. Other information in this column such as exact names, details of those involved
+etc are unimportant for our current project.
 
-    Number, Precipitation - too many NaN values, others mostly 0. Weather data already included in another column.
+Number, Precipitation - too many NaN values, others mostly 0. Weather data already included in another column.
 
-    Turning_Loop - all values are 'False'. Will not make any change to model.
+Turning_Loop - all values are 'False'. Will not make any change to model.
 
-    Timezone - our analysis will be based on local time. Timezone does not have any effect on accidents.
+Timezone - our analysis will be based on local time. Timezone does not have any effect on accidents.
 
-    Airport_Code - Location of accident already included in data set. Airport code unimportant.
+Airport_Code - Location of accident already included in data set. Airport code unimportant.
 
-    Weather_Timestamp - shows us exact time of weather measurement which all match day of accident. Unimportant for now.
+Weather_Timestamp - shows us exact time of weather measurement which all match day of accident. Unimportant for now.
 
-    Wind_Chill(F) - We already have weather data. Wind chill is calculated using temperature and wind speed which we
-                    already have in dataset. Affect of wind on skin is unimportant for accident rates.
+Wind_Chill(F) - We already have weather data. Wind chill is calculated using temperature and wind speed which we
+already have in dataset. Affect of wind on skin is unimportant for accident rates.
 
 
 #%%
@@ -245,10 +298,11 @@ data_ori.drop(columns=columns_to_drop, inplace=True)  # inplace -> no need to st
 Some values recorded in this dataset are clearly incorrect. We choose to not include them in future calculations.
 
 These include:
-a) Temperature(F) - contains extreme values of temperature outside the range of recorded temperature values in the US
+1. Temperature(F) - contains extreme values of temperature outside the range of recorded temperature values in the US
 from 2016 - 2020
-b) Wind_Speed(mph) - contains extreme values of wind speed outside the range of recorded speed values in the US
+2. Wind_Speed(mph) - contains extreme values of wind speed outside the range of recorded speed values in the US
 from 2016 - 2020. Assuming vehicles involved in the accident were not literally inside a tornado/hurricane
+
 #%%
 
 # Extreme Temperature -> 5 rows dropped
@@ -339,7 +393,7 @@ data_ori["Wind_Direction"].replace(wind_values, inplace=True)
 
 #%%
 
-data_prep = data_ori
+data_prep = data_ori.copy(deep=True)
 
 #%% md
 
@@ -491,11 +545,63 @@ plt.show()
 ---
 ## 7 Feature Engineering
 ### 7.1 Type Conversion
+#### 7.1.1 Label Encoding
+
+TODO: Jasmin @Irene -> is label encoding useful? Is assumes an order in the values, which is not given for county, state, cities.
+    Wouldn't it be of higher relevance to OneHotEncode those as well?
 
 duration
 TMC: NA is an important information
 
 #%%
+data_encoding = data_prep.copy(deep=True)
+
+
+#%% md
+#### 7.1.2 Binary Encoding
+
+#%%
+
+
+
+#%% md
+#### 7.1.3 OneHot Encoding
+
+#%%
+
+
+
+#%% md
+#### 7.1.4 Manual Encoding
+
+#%%
+
+split_words= ['/', 'and', 'with', ' ']
+
+def replace(index, value, split_index):
+    if value in weather_values:
+        column_name = 'weather_' + weather_values[value]
+        if not column_name in data_encoding:
+            data_encoding[column_name] = 0
+        data_encoding[column_name][index] = 1
+
+    else:
+        try:
+            if split_index<len(split_words):
+                split_values = value.split(split_words[split_index])
+                for split_value in split_values:
+                    split_value=split_value.strip()
+                    replace(index, split_value, split_index+1)
+            else:
+                print(value)
+        except AttributeError or TypeError:
+            print(str(value) + "!")
+
+
+for index, value in data_encoding['Weather_Condition'].iteritems():
+    replace(index, value, 0)
+    if index % 1000 == 0:
+        print(index)
 
 
 
@@ -504,6 +610,15 @@ TMC: NA is an important information
 ### 7.2 Transformation
 
 #%%
+
+data_final = data_encoding.copy(deep=True)
+
+# divide columns into dependant and independant
+data_independant = data_final.drop(['Severity'], axis=1)
+data_dependant = data_final[['Severity']]
+
+# normalize the data between 0 and 1
+data_independent = (data_independant - data_independant.min()) / (data_independant.max() - data_independant.min())
 
 
 
