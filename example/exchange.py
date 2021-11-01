@@ -1,3 +1,4 @@
+#%%
 #%% md
 
 TODO: chapter numbers
@@ -285,12 +286,23 @@ data_ori.drop(columns=columns_to_drop, inplace=True)  # inplace -> no need to st
 #%% md
 
 ### 5.2 Drop missing values
+checking for nan values in each column
 
+todo : drop rows/cols with too many
 #%%
+new_col_list = [] #39 cols
+for col in column_list:
+    if col not in columns_to_drop:
+        new_col_list.append(col)
 
-#TODO: Check for non and then drop @J + I
+# 13 cols contain nan values
+for col in new_col_list:
+    nan_sum = data_ori[col].isnull().sum()
+    if nan_sum:
+        print(col, nan_sum)
 
-
+# to confirm
+# delete rows ?
 
 #%% md
 
@@ -683,6 +695,8 @@ data_independent = (data_independant - data_independant.min()) / (data_independa
 ### 8.5 Prediction driving factors
 
 # SHAP diagram
+
+
 
 
 
