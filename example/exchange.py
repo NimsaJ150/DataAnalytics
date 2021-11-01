@@ -198,6 +198,12 @@ weather_values = {
     'N/A Precipitation': 'None',  #
 }
 
+# defining day values binary encoding
+day_dict = {
+    'Day' : True,
+    'Night': False
+}
+
 #%% md
 
 ---
@@ -286,9 +292,9 @@ data_ori.drop(columns=columns_to_drop, inplace=True)  # inplace -> no need to st
 #%% md
 
 ### 5.2 Drop missing values
-checking for nan values in each column
 
-todo : drop rows/cols with too many
+checking for nan values in each column
+todo : remaining cols
 #%%
 new_col_list = [] #39 cols
 for col in column_list:
@@ -301,9 +307,15 @@ for col in new_col_list:
     if nan_sum:
         print(col, nan_sum)
 
+#%%
 # to confirm
-# delete rows ?
 
+# deleting 83 total rows - City, Sunrise_Sunset, Civil_Twilight, Nautical_Twilight, Astronomical_Twilight
+print(len(data_ori)) #1516064
+data_ori.dropna(subset = ["City", 'Sunrise_Sunset', 'Civil_Twilight', 'Nautical_Twilight', 'Astronomical_Twilight'], inplace=True)
+print(len(data_ori)) #1515981
+
+# to do : what about the rest (replace?)
 #%% md
 
 ### 5.3 Drop incorrect values
@@ -563,23 +575,44 @@ plt.show()
 TODO: Jasmin @Irene -> is label encoding useful? Is assumes an order in the values, which is not given for county, state, cities.
     Wouldn't it be of higher relevance to OneHotEncode those as well?
 
+(Update)
+- attempt freq encoding for Counties, Cities
+- one hot encoding for States
+- binary encoding for Amenity, Bump, Crossing, Give_Way.......Astronomical twilight --done
+
 duration
 TMC: NA is an important information
+
+
 
 #%%
 data_encoding = data_prep.copy(deep=True)
 
 
 #%% md
-#### 7.1.2 Binary Encoding
-
+#### 7.1.2 'Binary' Encoding
+Ordinal encoding for columns with Day/Night values to bool - Sunrise_Sunset, Civil_Twilight, Nautical_Twilight, Astronomical_Twilight
 #%%
 
 
+data_ori['Sunrise_Sunset_isDay'] = data_ori.Sunrise_Sunset.map(day_dict)
+data_ori['Civil_Twilight_isDay'] = data_ori.Civil_Twilight.map(day_dict)
+data_ori['Nautical_Twilight_isDay'] = data_ori.Nautical_Twilight.map(day_dict)
+data_ori['Astronomical_Twilight_isDay'] = data_ori.Astronomical_Twilight.map(day_dict)
 
+# drop previous columns without bool values
+columns_to_drop = [
+    'Sunrise_Sunset',
+    'Civil_Twilight',
+    'Nautical_Twilight',
+    'Astronomical_Twilight'
+]
+
+data_ori.drop(columns=columns_to_drop, inplace=True)
+data_ori.head(10)
 #%% md
 #### 7.1.3 OneHot Encoding
-
+For states
 #%%
 
 
