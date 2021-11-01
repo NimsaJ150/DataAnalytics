@@ -1,4 +1,7 @@
 #%%
+
+
+
 #%% md
 
 TODO: chapter numbers
@@ -22,7 +25,6 @@ from sklearn import preprocessing
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 import seaborn as sns
-
 from sklearn.preprocessing import OrdinalEncoder, OneHotEncoder
 
 #%% md
@@ -273,6 +275,7 @@ Weather_Timestamp - shows us exact time of weather measurement which all match d
 Wind_Chill(F) - We already have weather data. Wind chill is calculated using temperature and wind speed which we
 already have in dataset. Affect of wind on skin is unimportant for accident rates.
 
+End_Time - End time in this dataset is just Start_time + 6 hours. Doesn't have any significant meaning.
 
 #%%
 
@@ -284,7 +287,8 @@ columns_to_drop = [
     'Timezone',
     'Airport_Code',
     'Weather_Timestamp',
-    'Wind_Chill(F)'
+    'Wind_Chill(F)',
+    'End_Time' #new addition** (irene)
 ]
 
 data_ori.drop(columns=columns_to_drop, inplace=True)  # inplace -> no need to store result in new variable
@@ -295,7 +299,9 @@ data_ori.drop(columns=columns_to_drop, inplace=True)  # inplace -> no need to st
 
 checking for nan values in each column
 todo : remaining cols
+
 #%%
+
 new_col_list = [] #39 cols
 for col in column_list:
     if col not in columns_to_drop:
@@ -308,6 +314,7 @@ for col in new_col_list:
         print(col, nan_sum)
 
 #%%
+
 # to confirm
 
 # deleting 83 total rows - City, Sunrise_Sunset, Civil_Twilight, Nautical_Twilight, Astronomical_Twilight
@@ -316,6 +323,7 @@ data_ori.dropna(subset = ["City", 'Sunrise_Sunset', 'Civil_Twilight', 'Nautical_
 print(len(data_ori)) #1515981
 
 # to do : what about the rest (replace?)
+
 #%% md
 
 ### 5.3 Drop incorrect values
@@ -345,6 +353,7 @@ data_ori.drop(data_ori[data_ori['Wind_Speed(mph)'] >= 471.8].index, inplace=True
 
 Formatting all zipcodes in dataset to contain 5 digits only - basic US zipcode format. The extended ZIP+4 code present
 in a few of the rows is not necessary for our analysis.
+
 #%%
 
 # taking first 5 digits of zip code -> save it in Zipcode again
@@ -586,19 +595,22 @@ TMC: NA is an important information
 
 
 #%%
+
 data_encoding = data_prep.copy(deep=True)
 
 
 #%% md
+
 #### 7.1.2 'Binary' Encoding
 Ordinal encoding for columns with Day/Night values to bool - Sunrise_Sunset, Civil_Twilight, Nautical_Twilight, Astronomical_Twilight
+
 #%%
 
 
-data_ori['Sunrise_Sunset_isDay'] = data_ori.Sunrise_Sunset.map(day_dict)
-data_ori['Civil_Twilight_isDay'] = data_ori.Civil_Twilight.map(day_dict)
-data_ori['Nautical_Twilight_isDay'] = data_ori.Nautical_Twilight.map(day_dict)
-data_ori['Astronomical_Twilight_isDay'] = data_ori.Astronomical_Twilight.map(day_dict)
+data_encoding['Sunrise_Sunset_isDay'] = data_encoding.Sunrise_Sunset.map(day_dict)
+data_encoding['Civil_Twilight_isDay'] = data_encoding.Civil_Twilight.map(day_dict)
+data_encoding['Nautical_Twilight_isDay'] = data_encoding.Nautical_Twilight.map(day_dict)
+data_encoding['Astronomical_Twilight_isDay'] = data_encoding.Astronomical_Twilight.map(day_dict)
 
 # drop previous columns without bool values
 columns_to_drop = [
@@ -608,16 +620,40 @@ columns_to_drop = [
     'Astronomical_Twilight'
 ]
 
-data_ori.drop(columns=columns_to_drop, inplace=True)
+data_encoding.drop(columns=columns_to_drop, inplace=True)
 data_ori.head(10)
-#%% md
-#### 7.1.3 OneHot Encoding
-For states
 #%%
-
-
-
+# to delete
+data_encoding.head()
 #%% md
+
+#### 7.1.3 OneHot Encoding
+##### TODO : Irene @Jasmin - just wanna double check if I did this right
+For states
+
+#%%
+ohc = OneHotEncoder()
+one_hot_encoded = ohc.fit_transform(data_encoding.State.values.reshape(-1,1)).toarray()
+
+# generate array with correct column names
+categories = ohc.categories_
+column_names = []
+
+for category in categories[0]:
+    column_name = category
+    column_names.append(column_name)
+
+# set correct column names
+one_hot_data = pd.DataFrame(one_hot_encoded, columns=column_names)
+
+# delete one column to avoid the dummy variable trap
+one_hot_data.drop(['AL'], axis= 1, inplace=True)
+
+# combining ohc dataframe to previous df
+data_encoding = pd.concat([data_encoding, one_hot_data], axis = 1)
+data_encoding.head()
+#%% md
+
 #### 7.1.4 Manual Encoding
 
 #%%
@@ -672,8 +708,27 @@ for column in data_one_hot:
 
 
 #%% md
+### 7.2 Timestamp transformation (Unix)
+Converting Start_Time to seconds from Unix Epoch.
 
-### 7.2 Transformation
+TODO Irene @Jasmin - why do we need to convert? We dont want our model to put a larger weightage on bigger time values
+right? Also - unix epoch is 1.1.1970 UTC time. So we will need to think about the timezone for each state before
+converting to seconds ༼☯﹏☯༽
+
+But imo 4pm in Timezone1 should be considered the same as 4pm in another timezone. So I disregard timezones n give the 'wrong'
+unix epoch time? If thats the case, I have implemented it below.
+if I want to see what effect time of day (for eg) has on severity/num of accidents - is conversion to UTC epoch necessary
+
+#%%
+d = data_encoding['Start_Time']
+# converting to unix epoch time and adding to df
+data_encoding['N_Start_Time'] = d.view('int64')
+
+# dropping original Start_Time column
+data_encoding.drop('Start_Time', axis=1)
+#%% md
+
+### 7.3 Transformation
 
 #%%
 
