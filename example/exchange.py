@@ -22,6 +22,8 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 import seaborn as sns
 
+from sklearn.preprocessing import OrdinalEncoder, OneHotEncoder
+
 #%% md
 
 ### 1.2 Data
@@ -174,7 +176,7 @@ weather_values = {
     'Whirlwinds': 'Whirlwinds',
     'Ice Pellets': 'Ice Pellets',
     'Rain Shower': 'Rain',  #
-    'Rain Showers': 'Rain', #
+    'Rain Showers': 'Rain',  #
     'Snow Shower': 'Snow', #
     'Snow Showers': 'Snow', #
     'Scattered Clouds': 'Cloudy',  #
@@ -182,11 +184,11 @@ weather_values = {
     'Sleet': 'Sleet',
     'Small Hail': 'Hail',  #
     'Wintry Mix': 'Wintry Mix',
-    'Thunder': 'Thunder',
-    'T-Storm': 'Thunder',  #
-    'Thunderstorm': 'Thunder',  #
-    'Thunderstorms': 'Thunder',  #
-    'Thunder in the Vicinity': 'Thunder',  #
+    'Thunder': 'Thunderstorm',  #
+    'T-Storm': 'Thunderstorm',  #
+    'Thunderstorm': 'Thunderstorm',
+    'Thunderstorms': 'Thunderstorm',  #
+    'Thunder in the Vicinity': 'Thunderstorm',  #
     'Tornado': 'Tornado',
     'Smoke': 'Smoke',
     'Shallow Fog': 'Fog',  #
@@ -194,6 +196,7 @@ weather_values = {
     'Squalls': 'Squalls',
     'Widespread Dust': 'Dust',  #
     'Volcanic Ash': 'Volcanic Ash',
+    'N/A Precipitation': 'None',
 }
 
 #%% md
@@ -576,33 +579,53 @@ data_encoding = data_prep.copy(deep=True)
 
 #%%
 
+data_encoding['Weather_Condition'] = data_encoding['Weather_Condition'].fillna('None')
+
+one_hot_encoder = OneHotEncoder()
+
+data_one_hot = one_hot_encoder.fit_transform(data_encoding[['Weather_Condition']])
+data_one_hot_array = data_one_hot.toarray()
+
+# generate array with correct column names
+categories = one_hot_encoder.categories_
+column_names = []
+
+for category in categories[0]:
+    column_name = category
+    column_names.append(column_name)
+
+    # set correct column names
+data_one_hot = pd.DataFrame(data_one_hot_array, columns=column_names)
+
+# delete one column to avoid the dummy variable trap
+data_one_hot.drop(data_one_hot.columns[-1], axis=1, inplace=True) # drop last n rows
+
+#%%
+
 split_words= ['/', 'and', 'with', ' ']
 
-def replace(index, value, split_index):
-    if value in weather_values:
-        column_name = 'weather_' + weather_values[value]
+def replace(value, split_value, split_index):
+    if split_value in weather_values:
+        column_name = 'weather_' + weather_values[split_value]
         if not column_name in data_encoding:
-            data_encoding[column_name] = 0
-        data_encoding[column_name][index] = 1
+            data_encoding[column_name] = data_one_hot[value]
+        else:
+            data_encoding[column_name] += data_one_hot[value]
 
     else:
         try:
-            if split_index<len(split_words):
-                split_values = value.split(split_words[split_index])
+            if split_index < len(split_words):
+                split_values = split_value.split(split_words[split_index])
                 for split_value in split_values:
                     split_value=split_value.strip()
-                    replace(index, split_value, split_index+1)
+                    replace(value, split_value, split_index+1)
             else:
                 print(value)
         except AttributeError or TypeError:
             print(str(value) + "!")
 
-
-for index, value in data_encoding['Weather_Condition'].iteritems():
-    replace(index, value, 0)
-    if index % 1000 == 0:
-        print(index)
-
+for column in data_one_hot:
+    replace(column, column, 0)
 
 
 #%% md
