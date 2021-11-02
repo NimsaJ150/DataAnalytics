@@ -365,7 +365,13 @@ data_ori['Zipcode'] = data_ori['Zipcode'].str[:5]
 #### 5.4.2 Unit conversion to SI units
 
 TODO: (Luke) fil End_lat and End_Lng by Start_Lat and Start_Lng (check prior what is the average difference between the two)
-#why ?
+the point is: Even if we know, that the distance is 5km, the end of the accident/traffic jam can be in all cardinal
+directions. Thus setting the end to the same coordinates is the best proxy.
+
+#%%
+
+data_ori["End_Lat"].fillna(data_ori["Start_Lat"])
+data_ori["End_Lng"].fillna(data_ori["Start_Lng"])
 
 #%%
 
@@ -407,6 +413,7 @@ data_ori.drop(columns=columns_to_drop, inplace=True)
 data_ori['Start_Time'] = pd.to_datetime(data_ori['Start_Time'])
 
 # creating columns for Section 6 analysis.
+data_ori['Year'] = data_ori['Start_Time'].dt.year
 data_ori['Weekday'] = data_ori['Start_Time'].dt.dayofweek  # Monday = 0
 data_ori['Month'] = data_ori['Start_Time'].dt.month
 data_ori['Hour'] = data_ori['Start_Time'].dt.hour
@@ -485,61 +492,58 @@ data_prep.describe()
 
 #%%
 
-# ideas: qq plots, histograms, barplots,
-
-for column in:  # list of columns
-    fig, ax = plt.subplots(1, 1, figsize=(15, 6))
-    sns.countplot(y=data_prep[column][1:], data=data_prep.iloc[1:], order=data_prep[column][1:].value_counts().index,
-                  palette='Blues_r')
-    fig.text(0.1, 0.95, column, fontsize=16, fontweight='bold', fontfamily='serif')
-    plt.xlabel('', fontsize=20)
-    plt.ylabel('')
-    plt.yticks(fontsize=13)
-    plt.box(False)
-
-#%%
-
 # histogram of accidents of the biggest cities
-data_prep.City.value_counts()[:20].plot(kind='bar')
+data_prep.City.value_counts()[:20].plot(kind='bar', figsize=(12,6))
 
 #%%
 
 # histogram of accidents according to the weather condition (how to standardize?)
-data_prep.Weather_Condition.value_counts().plot(kind='bar')
+# preferably after feature engineering
+data_prep.Weather_Condition.value_counts().plot(kind='bar', figsize=(12,6))
+
+#%%
+
+# ggplot with the develpment of accidents over time
+plt.style.use('ggplot')
+fig, ax = plt.subplots(figsize=(12,6))
+data_prep.groupby(['Month','Severity']).count()['ID'].unstack().plot(ax=ax)  # 'Year'
+ax.set_xlabel('Month')
+ax.set_ylabel('Number of Accidents')
 
 #%%
 
 # histogram of accidents according to time of day
+hours = [hour for hour, df in data_prep.groupby('Hour')]
+plt.plot(hours, data_prep.groupby(['Hour'])['ID'].count())
+plt.xticks(hours)
+plt.xlabel('Hour')
+plt.ylabel('Number of accidents')
+plt.grid(True)
+plt.show()
+
+#%%
+
+# histogram of accidents according to day of the week
+# TODO: Change numbers to actual days of the week (Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday)
+days = [day for day, df in data_prep.groupby('Weekday')]
+plt.plot(days, data_prep.groupby(['Weekday'])['ID'].count())
+plt.xticks(days)
+plt.xlabel('Weekday')
+plt.ylabel('Number of accidents')
+plt.grid(True)
+plt.show()
 
 #%%
 
 # histogram of accidents filtered by state
-data_prep.State.value_counts().plot(kind='bar')
+data_prep.State.value_counts().plot(kind='bar', figsize=(12,6))
 
 #%%
 
 # pie diagram on severity
 data_prep.Severity.value_counts().plot.pie()
-# pie diagram on severity if the weather is poor (wind > threashold, rain > threshold)
-
-#%%
-
-# average duration (densityfunction)
-
-#%%
-
-# barplot of the connection between severity and distance
-
-#%%
-
-
-
-#%%
-
-
-
-#%%
-
+# pie diagram on severity if the weather is poor (wind > threashold, rain > threshold);
+# already dropped
 
 
 #%% md
@@ -549,7 +553,7 @@ data_prep.Severity.value_counts().plot.pie()
 #%%
 
 # correlation matrices and PCA??
-data_prep.corr(method='spearman')
+data_prep.corr()
 
 #%% md
 
@@ -558,18 +562,24 @@ data_prep.corr(method='spearman')
 #%%
 
 # to be adjusted:
-fig = plt.gcf()
-fig.set_size_inches(20, 20)
-fig = sns.heatmap(data_prep.corr(), annot=True, linewidths=1, linecolor='k', square=True, mask=False, vmin=-1, vmax=1,
-                  cbar_kws={"orientation": "vertical"}, cbar=True)
+fig=plt.gcf()
+fig.set_size_inches(20,20)
+fig=sns.heatmap(data_prep.corr(),annot=True,linewidths=1,linecolor='k',square=True,mask=False, vmin=-1, vmax=1,cbar_kws={"orientation": "vertical"},cbar=True)
 sns.set(style='ticks')
+plt.title("Spearman Correlation between all features")
 sns.pairplot(data_prep)
 
+#%%
+
+# to be adjusted:
 # US map simple: scatterplot based on latitude and longitude data, with correct alpha, to show densitiy
-sns.jointplot(x=data_prep.Start_Lng.values, y=data_prep.Start_Lat.values, height=8)
-plt.ylabel('Start_Lat', fontsize=12)
-plt.xlabel('Start_Lng', fontsize=12)
+plt.figure(figsize = (15,9))
+sns.scatterplot(x="Start_Lng", y="Start_Lat", data=data_prep, hue = "Severity", legend = "auto", s=15)
+plt.title("Location of all accidents in the USA in the time from 2016 to 2020, distinguished by severtiy")
 plt.show()
+
+#%%
+
 # ideas: A MAP of the US, showing the accident intensity for each place by colour
 # https://runestone.academy/runestone/books/published/httlads/WorldFacts/cs1_graphing_infant_mortality.html
 
