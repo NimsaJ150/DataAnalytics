@@ -66,6 +66,7 @@ df_amz.head()
 ## 2 Definitions
 
 #%%
+
 #all parameters in original data
 
 column_list = [
@@ -308,22 +309,38 @@ for col in column_list:
         new_col_list.append(col)
 
 # 13 cols contain nan values
+# City 83
+# Zipcode 935
+# Temperature(F) 43033
+# Humidity(%) 45509
+# Pressure(in) 36274
+# Visibility(mi) 44211
+# Wind_Direction 41858
+# Wind_Speed(mph) 128862
+# Weather_Condition 44007
+# Sunrise_Sunset 83
+# Civil_Twilight 83
+# Nautical_Twilight 83
+# Astronomical_Twilight 83
+
 for col in new_col_list:
     nan_sum = data_ori[col].isnull().sum()
     if nan_sum:
         print(col, nan_sum)
 
 #%%
-
-# to confirm
+#deleting nan rows
 
 # deleting 83 total rows - City, Sunrise_Sunset, Civil_Twilight, Nautical_Twilight, Astronomical_Twilight
 print(len(data_ori)) #1516064
 data_ori.dropna(subset = ["City", 'Sunrise_Sunset', 'Civil_Twilight', 'Nautical_Twilight', 'Astronomical_Twilight'], inplace=True)
-print(len(data_ori)) #1515981
 
-# to do : what about the rest (replace?)
-
+# deleting remaining rows since it is only a small percentage of the entire dataset
+data_ori.dropna(subset= ['Zipcode', 'Temperature(F)', 'Humidity(%)', 'Pressure(in)', 'Visibility(mi)', 'Wind_Direction',
+                         'Wind_Speed(mph)', 'Weather_Condition', 'Sunrise_Sunset',
+                         'Civil_Twilight', 'Nautical_Twilight', 'Astronomical_Twilight'], inplace=True)
+print(len(data_ori)) #1370980
+# about 9% of data removed
 #%% md
 
 ### 5.3 Drop incorrect values
@@ -632,9 +649,12 @@ columns_to_drop = [
 
 data_encoding.drop(columns=columns_to_drop, inplace=True)
 data_ori.head(10)
+
 #%%
+
 # to delete
 data_encoding.head()
+
 #%% md
 
 #### 7.1.3 OneHot Encoding
@@ -642,6 +662,7 @@ data_encoding.head()
 For states
 
 #%%
+
 ohc = OneHotEncoder()
 one_hot_encoded = ohc.fit_transform(data_encoding.State.values.reshape(-1,1)).toarray()
 
@@ -662,6 +683,7 @@ one_hot_data.drop(['AL'], axis= 1, inplace=True)
 # combining ohc dataframe to previous df
 data_encoding = pd.concat([data_encoding, one_hot_data], axis = 1)
 data_encoding.head()
+
 #%% md
 
 #### 7.1.4 Manual Encoding
@@ -718,6 +740,7 @@ for column in data_one_hot:
 
 
 #%% md
+
 ### 7.2 Timestamp transformation (Unix)
 Converting Start_Time to seconds from Unix Epoch.
 
@@ -730,12 +753,14 @@ unix epoch time? If thats the case, I have implemented it below.
 if I want to see what effect time of day (for eg) has on severity/num of accidents - is conversion to UTC epoch necessary
 
 #%%
+
 d = data_encoding['Start_Time']
 # converting to unix epoch time and adding to df
 data_encoding['N_Start_Time'] = d.view('int64')
 
 # dropping original Start_Time column
 data_encoding.drop('Start_Time', axis=1)
+
 #%% md
 
 ### 7.3 Transformation
