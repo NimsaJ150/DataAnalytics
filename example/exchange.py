@@ -33,7 +33,7 @@ from sklearn.preprocessing import OrdinalEncoder, OneHotEncoder
 
 #%%
 
-file_path = './US_Accidents_Dec20_updated.csv'
+file_path = './US_Accidents_Dec20.csv'
 
 # If file exists
 if os.path.isfile(file_path):
