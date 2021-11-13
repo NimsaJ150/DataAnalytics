@@ -1,7 +1,3 @@
-#%%
-
-
-
 #%% md
 
 TODO: chapter numbers
@@ -245,14 +241,6 @@ data_ori.describe()
 
 Number, Temperature(F)	Wind_Chill(F)	Humidity(%)	Pressure(in)	Visibility(mi)	Wind_Speed(mph)	Precipitation(in)
 
-#%%
-
-# display all value counts -> length: counts unique values
-for column in column_list:  # list of columns
-    print(data_ori[column].value_counts().sort_index(), "\n")
-
-
-
 #%% md
 
 ### 5.1 Drop columns
@@ -279,6 +267,7 @@ already have in dataset. Affect of wind on skin is unimportant for accident rate
 End_Time - End time in this dataset is just Start_time + 6 hours. Doesn't have any significant meaning.
 
 #%%
+# TODO: drop End_Lat, End_Lng, Country, ID, Source?
 
 columns_to_drop = [
     'Description',
@@ -669,7 +658,7 @@ state_list = data_prep["State"].unique()
 sorted_state_list = sorted(state_list)
 plt.figure(figsize = (16,9))
 g = sns.scatterplot(x="Start_Lng", y="Start_Lat", data=data_prep, hue = "State", hue_order=sorted_state_list,
-                legend = "auto", s=15, palette="cividis", alpha=0.3)
+                    legend = "auto", s=15, palette="cividis", alpha=0.3)
 g.legend(loc='center right', bbox_to_anchor=(1.1, 0.5), ncol=2)
 plt.title("Location of all accidents in the USA in the time from 2016 to 2020, distinguished by State")
 plt.show()
@@ -680,8 +669,28 @@ plt.show()
 
 #%% md
 
-### 6.5 Comparission of 2019 with 2020
+### 6.5 Comparison of 2019 with 2020
 - Dumbbell plot https://www.machinelearningplus.com/plots/top-50-matplotlib-visualizations-the-master-plots-python
+
+#### 6.5.1 Preparation
+#%%
+data_prep_wo_bias = data_prep.copy(deep=True)
+
+data_prep_wo_bias = data_prep_wo_bias[data_prep_wo_bias['State'] != 'CA']
+data_prep_wo_bias = data_prep_wo_bias[data_prep_wo_bias['State'] != 'FL']
+
+#%%
+data_prep_wo_bias_2020 = data_prep_wo_bias[data_prep_wo_bias.Year == 2020]
+data_prep_wo_bias_2019 = data_prep_wo_bias[data_prep_wo_bias.Year == 2019]
+
+#%% md
+
+#### 6.5.2 Comparison
+- Dumbbell plot https://www.machinelearningplus.com/plots/top-50-matplotlib-visualizations-the-master-plots-python
+
+#%%
+
+
 
 #%% md
 
@@ -695,8 +704,8 @@ TODO: Jasmin @Irene -> is label encoding useful? Is assumes an order in the valu
 
 (Update)
 - attempt freq encoding for Counties, Cities
-- one hot encoding for States
-- binary encoding for Amenity, Bump, Crossing, Give_Way.......Astronomical twilight --done
+    - one hot encoding for States
+    - binary encoding for Amenity, Bump, Crossing, Give_Way.......Astronomical twilight --done
 
 duration
 TMC: NA is an important information
@@ -705,7 +714,7 @@ TMC: NA is an important information
 
 #%%
 
-data_encoding = data_prep.copy(deep=True)
+data_encoding = data_prep_wo_bias.copy(deep=True)
 
 
 #%% md
@@ -715,6 +724,8 @@ Ordinal encoding for columns with Day/Night values to bool - Sunrise_Sunset, Civ
 
 #%%
 
+#TODO: encode Side?
+# TODO: what about all the true/false values?
 
 data_encoding['Sunrise_Sunset_isDay'] = data_encoding.Sunrise_Sunset.map(day_dict)
 data_encoding['Civil_Twilight_isDay'] = data_encoding.Civil_Twilight.map(day_dict)
@@ -731,11 +742,6 @@ columns_to_drop = [
 
 data_encoding.drop(columns=columns_to_drop, inplace=True)
 data_ori.head(10)
-
-#%%
-
-# to delete
-data_encoding.head()
 
 #%% md
 
@@ -819,6 +825,19 @@ def replace(value, split_value, split_index):
 
 for column in data_one_hot:
     replace(column, column, 0)
+
+#%% md
+
+#### 7.1.5 Frequency encoding
+For Street, City, County
+
+#%%
+
+data_encoding['County'] = data_encoding['County'].replace(data_encoding['County'].value_counts())
+
+#%%
+data_encoding['City'] = data_encoding['City'].replace(data_encoding['Street'].value_counts())
+data_encoding['Street'] = data_encoding['Street'].replace(data_encoding['Street'].value_counts())
 
 
 #%% md
