@@ -245,14 +245,14 @@ Number, Temperature(F)	Wind_Chill(F)	Humidity(%)	Pressure(in)	Visibility(mi)	Win
 
 ### 5.1 Drop columns
 Dropping irrelevant columns.
-!!!!! Add more reasons @irene
-'End_Lat',
-'End_Lng',
-'Country',
-'ID',
-'Source'
+!!!!! Add more reasons @irene (change)---------------
+
 
 Reasons:
+End_Lat, End_Lng - Shows end position of car crash. Full of NaNs.
+Country - Since it is all happening in the US, this is an insignificant column.
+ID - ID of each crash. Unnecessary for modelling reasons.
+Source - API source of where the data comes from. This has no relationship to accident type/severity.
 Description - contains unstructured text data (with typos) which contains information such as address/ zipcode which
 are already present in the data set. Other information in this column such as exact names, details of those involved
 etc are unimportant for our current project.
@@ -272,8 +272,9 @@ already have in dataset. Affect of wind on skin is unimportant for accident rate
 
 End_Time - End time in this dataset is just Start_time + 6 hours. Doesn't have any significant meaning.
 
+Sunrise_Sunset, Civil_Twilight, Astronomical_Twilight - to avoid spurious correlatons. Nautical Twilight is the point at
+which artificial light is recommended so we chose that as our indicator of Day/Night
 #%%
-# TODO: drop the other sunrise sunser
 
 columns_to_drop = [
     'End_Lat',
@@ -289,7 +290,11 @@ columns_to_drop = [
     'Airport_Code',
     'Weather_Timestamp',
     'Wind_Chill(F)',
-    'End_Time' #new addition** (irene)
+    'End_Time',
+    'Sunrise_Sunset',
+    'Civil_Twilight',
+    'Astronomical_Twilight'
+
 ]
 
 data_ori.drop(columns=columns_to_drop, inplace=True)  # inplace -> no need to store result in new variable
@@ -317,10 +322,8 @@ for col in column_list:
 # Wind_Direction 83611
 # Wind_Speed(mph) 479326
 # Weather_Condition 98383
-# Sunrise_Sunset 141
-# Civil_Twilight 141
 # Nautical_Twilight 141
-# Astronomical_Twilight 141
+
 
 for col in new_col_list:
     nan_sum = data_ori[col].isnull().sum()
@@ -330,16 +333,16 @@ for col in new_col_list:
 #%%
 #deleting nan rows
 
-# deleting 141 total rows - City, Sunrise_Sunset, Civil_Twilight, Nautical_Twilight, Astronomical_Twilight
+# deleting 141 total rows - City, Nautical_Twilight
 print(len(data_ori)) #4232541
-data_ori.dropna(subset = ["City", 'Sunrise_Sunset', 'Civil_Twilight', 'Nautical_Twilight', 'Astronomical_Twilight'], inplace=True)
+data_ori.dropna(subset = ["City", 'Nautical_Twilight'], inplace=True)
 
 # deleting remaining rows since it is only a small percentage of the entire dataset
 data_ori.dropna(subset= ['City', 'Zipcode', 'Temperature(F)', 'Humidity(%)', 'Pressure(in)', 'Visibility(mi)', 'Wind_Direction',
-                         'Wind_Speed(mph)', 'Weather_Condition', 'Sunrise_Sunset',
-                         'Civil_Twilight', 'Nautical_Twilight', 'Astronomical_Twilight'], inplace=True)
+                         'Wind_Speed(mph)', 'Weather_Condition'], inplace=True)
 print(len(data_ori)) #3713887
-# about x% data removed @irene !!!
+
+# about 12% data removed (all NaNs) -- change --
 #%% md
 
 ### 5.3 Drop incorrect values
@@ -353,14 +356,14 @@ from 2016 - 2020
 from 2016 - 2020. Assuming vehicles involved in the accident were not literally inside a tornado/hurricane
 
 #%%
-
+print(data_ori.head())
 # Extreme Temperature -> x rows dropped @irene
 data_ori.drop(data_ori[(data_ori['Temperature(F)'] >= 168.8) | (data_ori['Temperature(F)'] <= -77.8)].index,
               inplace=True)
-
+print(data_ori.head())
 # Extreme Wind_Speed -> y rows dropped @irene
 data_ori.drop(data_ori[data_ori['Wind_Speed(mph)'] >= 471.8].index, inplace=True)
-
+print(data_ori.head())
 #%% md
 
 ### 5.4 Value Transformation
@@ -742,20 +745,15 @@ Ordinal encoding for columns with Day/Night values to bool - Sunrise_Sunset, Civ
 #TODO: encode Side?
 # TODO: what about all the true/false values?
 
-data_encoding['Sunrise_Sunset_isDay'] = data_encoding.Sunrise_Sunset.map(day_dict)
-data_encoding['Civil_Twilight_isDay'] = data_encoding.Civil_Twilight.map(day_dict)
 data_encoding['Nautical_Twilight_isDay'] = data_encoding.Nautical_Twilight.map(day_dict)
-data_encoding['Astronomical_Twilight_isDay'] = data_encoding.Astronomical_Twilight.map(day_dict)
+
 #!!!! @irene
 # look at side column - to drop? to conv to bool (you dont need to do this by hand)
 
 
 # drop previous columns without bool values
 columns_to_drop = [
-    'Sunrise_Sunset',
-    'Civil_Twilight',
     'Nautical_Twilight',
-    'Astronomical_Twilight'
 ]
 
 data_encoding.drop(columns=columns_to_drop, inplace=True)
@@ -922,6 +920,8 @@ data_dependant = data_final[['Severity']]
 
 # normalize the data between 0 and 1
 data_independent = (data_independant - data_independant.min()) / (data_independant.max() - data_independant.min())
+
+
 
 #%% md
 
