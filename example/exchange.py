@@ -761,8 +761,9 @@ data_ori.head(10)
 
 #### 7.1.3 OneHot Encoding
 ##### TODO : Irene @Jasmin - just wanna double check if I did this right
+
 For states
-**why have new rows been added at this step? (for data_encoding df)
+**why have new rows been added at this step? (for data_encoding df) !!!!!!!!!
 #%%
 
 ohc = OneHotEncoder()
@@ -842,7 +843,7 @@ data_one_hot = pd.DataFrame(data_one_hot_array, columns=column_names)
 
 # delete one column to avoid the dummy variable trap
 data_one_hot.drop('None', axis=1, inplace=True) # drop last n rows
-
+data_one_hot.head()
 #%%
 
 split_words= ['/', 'and', 'with', ' ']
@@ -888,14 +889,6 @@ data_encoding['Street'] = data_encoding['Street'].replace(data_encoding['Street'
 
 ### 7.2 Timestamp transformation (Unix)
 Converting Start_Time to seconds from Unix Epoch.
-
-TODO Irene @Jasmin - why do we need to convert? We dont want our model to put a larger weightage on bigger time values
-right? Also - unix epoch is 1.1.1970 UTC time. So we will need to think about the timezone for each state before
-converting to seconds ༼☯﹏☯༽
-
-But imo 4pm in Timezone1 should be considered the same as 4pm in another timezone. So I disregard timezones n give the 'wrong'
-unix epoch time? If thats the case, I have implemented it below.
-if I want to see what effect time of day (for eg) has on severity/num of accidents - is conversion to UTC epoch necessary
 
 #%%
 
