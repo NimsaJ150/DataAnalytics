@@ -748,7 +748,7 @@ data_ori.head(10)
 #### 7.1.3 OneHot Encoding
 ##### TODO : Irene @Jasmin - just wanna double check if I did this right
 For states
-
+**why have new rows been added at this step? (for data_encoding df)
 #%%
 
 ohc = OneHotEncoder()
@@ -771,6 +771,36 @@ one_hot_data.drop(['AL'], axis= 1, inplace=True)
 # combining ohc dataframe to previous df
 data_encoding = pd.concat([data_encoding, one_hot_data], axis = 1)
 data_encoding.head()
+
+#%%
+
+#For Wind Direction
+
+ohc = OneHotEncoder()
+one_hot_encoded = ohc.fit_transform(data_encoding.Wind_Direction.values.reshape(-1,1)).toarray()
+
+# generate array with correct column names
+categories = ohc.categories_
+column_names = []
+
+for category in categories[0]:
+    column_name = category
+    column_names.append(column_name)
+
+# set correct column names
+one_hot_data = pd.DataFrame(one_hot_encoded, columns=column_names)
+one_hot_data.head()
+
+# there is a NaN column even though nan values have already been removed.
+#Might be the new rows ??? TODO !!!!!
+
+
+# delete one column to avoid the dummy variable trap
+# one_hot_data.drop(['AL'], axis= 1, inplace=True)
+
+# combining ohc dataframe to previous df
+# data_encoding = pd.concat([data_encoding, one_hot_data], axis = 1)
+# data_encoding.head()
 
 #%% md
 
