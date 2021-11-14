@@ -247,14 +247,16 @@ Number, Temperature(F)	Wind_Chill(F)	Humidity(%)	Pressure(in)	Visibility(mi)	Win
 
 ### 5.1 Drop columns
 Dropping irrelevant columns.
-!!!!! Add more reasons @irene (change)---------------
-
 
 Reasons:
 End_Lat, End_Lng - Shows end position of car crash. Full of NaNs.
+
 Country - Since it is all happening in the US, this is an insignificant column.
+
 ID - ID of each crash. Unnecessary for modelling reasons.
-    Source - API source of where the data comes from. This has no relationship to accident type/severity.
+
+Source - API source of where the data comes from. This has no relationship to accident type/severity.
+
 Description - contains unstructured text data (with typos) which contains information such as address/ zipcode which
 are already present in the data set. Other information in this column such as exact names, details of those involved
 etc are unimportant for our current project.
@@ -350,7 +352,7 @@ data_ori.dropna(
             'Wind_Speed(mph)', 'Weather_Condition'], inplace=True)
 print(len(data_ori))  #3713887
 
-# about 12% data removed (all NaNs) -- change --
+# about 12% data removed (all NaNs)
 #%% md
 
 ### 5.3 Drop incorrect values
@@ -364,14 +366,13 @@ from 2016 - 2020
 from 2016 - 2020. Assuming vehicles involved in the accident were not literally inside a tornado/hurricane
 
 #%%
-print(data_ori.head())
-# Extreme Temperature -> x rows dropped @irene
+# Extreme Temperature -> 5 rows dropped
 data_ori.drop(data_ori[(data_ori['Temperature(F)'] >= 168.8) | (data_ori['Temperature(F)'] <= -77.8)].index,
               inplace=True)
-print(data_ori.head())
-# Extreme Wind_Speed -> y rows dropped @irene
+print(len(data_ori))
+# Extreme Wind_Speed -> 13 rows dropped
 data_ori.drop(data_ori[data_ori['Wind_Speed(mph)'] >= 471.8].index, inplace=True)
-print(data_ori.head())
+print(len(data_ori))
 #%% md
 
 ### 5.4 Value Transformation
@@ -500,7 +501,7 @@ data_prep.describe()
 #%%
 
 # histogram of accidents of the biggest cities
-data_prep.City.value_counts()[:20].plot(kind='bar', figsize=(12, 6), color="#173F74")
+data_prep.City.value_counts()[:20].plot(kind='bar', figsize=(12,6), color="#173F74")
 plt.xticks(rotation=30)
 plt.ylabel('Number of accidents')
 plt.title("The 20 US-Cities with most accidents.")
@@ -726,9 +727,10 @@ data_prep_wo_bias_2019 = data_prep_wo_bias[data_prep_wo_bias.Year == 2019]
 
 # Preparation
 data_encoding = data_prep_wo_bias.copy(deep=True)
-data_encoding.reset_index(inplace=True)
-data_encoding.drop(['index'], axis=1, inplace=True)
+data_encoding.reset_index(inplace=True, drop=True)
+# data_encoding.drop(['index'], axis= 1, inplace=True)
 data_encoding.head()
+
 
 #%% md
 
@@ -758,11 +760,10 @@ data_encoding.head()
 #%% md
 
 #### 7.1.2 'Binary' Encoding
-Ordinal encoding for columns with Day/Night values to bool - Sunrise_Sunset, Civil_Twilight, Nautical_Twilight, Astronomical_Twilight
+Ordinal encoding for columns with Day/Night values to bool - Nautical_Twilight
+Ordinal encoding for Side (Left/Right) to bool
 
 #%%
-
-#TODO: encode Side?
 # TODO: what about all the true/false values?
 
 data_encoding[['Side']] = ordinal_encoder.fit_transform(data_encoding[['Side']])
@@ -796,17 +797,21 @@ for column in bool_columns:
 #%%
 data_encoding['Nautical_Twilight_isDay'] = data_encoding.Nautical_Twilight.map(day_dict)
 
-#!!!! @irene
-# look at side column - to drop? to conv to bool (you dont need to do this by hand)
 
+#%%
+#for side
+# data_encoding.reset_index(inplace=True, drop=True)
+data_encoding['is_RightSide'] = data_encoding.Side.map(side_dict)
 
 # drop previous columns without bool values
 columns_to_drop = [
     'Nautical_Twilight',
+    'Side'
 ]
 
 data_encoding.drop(columns=columns_to_drop, inplace=True)
 data_ori.head(10)
+
 
 #%% md
 
