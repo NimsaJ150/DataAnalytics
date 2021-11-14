@@ -740,7 +740,7 @@ data_encoding.head()
 (Update)
 - attempt freq encoding for Counties
     - attempt ordianl encoding for Streets, Cities
-    - one hot encoding for States
+        - one hot encoding for States
 
 duration
 
@@ -981,7 +981,7 @@ data_encoding.drop('Start_Time', axis=1, inplace=True)
 
 #%%
 
-data_final = data_encoding.copy(deep=True)[:500]
+data_final = data_encoding.copy(deep=True)
 
 # divide columns into dependant and independant
 data_independant = data_final.drop(['Severity'], axis=1)
@@ -1017,12 +1017,36 @@ X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2, random_
 #%%
 
 # concatenate data for sampling
-data = X_train.copy(deep=True)
-data['severity'] = Y_train
+data_tbsampled = X_train.copy(deep=True)
+data_tbsampled['severity'] = Y_train
 
+data_tbsampled.reset_index(inplace=True, drop=True)
 #%%
 
+severity_values = Y_train['Severity'].value_counts()
 
+#%%
+def balanced_subsample(y, size=None, random_state=None): # returns a List with randomly chosen row numbers
+    subsample = []
+    if size is None:
+        n_smp = y.value_counts().min()
+    else:
+        n_smp = int(size / len(y.value_counts().index))
+
+    if not random_state is None:
+        np.random.seed(random_state)
+
+    for label in y.value_counts().index:
+        samples = y[y == label].index.values
+        index_range = range(samples.shape[0])
+        indexes = np.random.choice(index_range, size=n_smp, replace=False)
+        subsample += samples[indexes].tolist()
+
+    return subsample
+
+rows = balanced_subsample(data_tbsampled['severity'], random_state=0)
+#%%
+data_downsampled = data_tbsampled.iloc[rows, :]
 
 #%% md
 
