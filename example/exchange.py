@@ -245,6 +245,12 @@ Number, Temperature(F)	Wind_Chill(F)	Humidity(%)	Pressure(in)	Visibility(mi)	Win
 
 ### 5.1 Drop columns
 Dropping irrelevant columns.
+!!!!! Add more reasons @irene
+'End_Lat',
+    'End_Lng',
+    'Country',
+    'ID',
+    'Source'
 
 Reasons:
 Description - contains unstructured text data (with typos) which contains information such as address/ zipcode which
@@ -267,9 +273,14 @@ already have in dataset. Affect of wind on skin is unimportant for accident rate
 End_Time - End time in this dataset is just Start_time + 6 hours. Doesn't have any significant meaning.
 
 #%%
-# TODO: drop End_Lat, End_Lng, Country, ID, Source?
+# TODO: drop the other sunrise sunser
 
 columns_to_drop = [
+    'End_Lat',
+    'End_Lng',
+    'Country',
+    'ID',
+    'Source',
     'Description',
     'Number',
     'Precipitation(in)',
@@ -288,7 +299,6 @@ data_ori.drop(columns=columns_to_drop, inplace=True)  # inplace -> no need to st
 ### 5.2 Drop missing values
 
 checking for nan values in each column
-todo : remaining cols
 
 #%%
 
@@ -298,19 +308,19 @@ for col in column_list:
         new_col_list.append(col)
 
 # 13 cols contain nan values
-# City 83
-# Zipcode 935
-# Temperature(F) 43033
-# Humidity(%) 45509
-# Pressure(in) 36274
-# Visibility(mi) 44211
-# Wind_Direction 41858
-# Wind_Speed(mph) 128862
-# Weather_Condition 44007
-# Sunrise_Sunset 83
-# Civil_Twilight 83
-# Nautical_Twilight 83
-# Astronomical_Twilight 83
+# City 137
+# Zipcode 1292
+# Temperature(F) 89900
+# Humidity(%) 95467
+# Pressure(in) 76384
+# Visibility(mi) 98668
+# Wind_Direction 83611
+# Wind_Speed(mph) 479326
+# Weather_Condition 98383
+# Sunrise_Sunset 141
+# Civil_Twilight 141
+# Nautical_Twilight 141
+# Astronomical_Twilight 141
 
 for col in new_col_list:
     nan_sum = data_ori[col].isnull().sum()
@@ -320,16 +330,16 @@ for col in new_col_list:
 #%%
 #deleting nan rows
 
-# deleting 83 total rows - City, Sunrise_Sunset, Civil_Twilight, Nautical_Twilight, Astronomical_Twilight
-print(len(data_ori)) #1516064
+# deleting 141 total rows - City, Sunrise_Sunset, Civil_Twilight, Nautical_Twilight, Astronomical_Twilight
+print(len(data_ori)) #4232541
 data_ori.dropna(subset = ["City", 'Sunrise_Sunset', 'Civil_Twilight', 'Nautical_Twilight', 'Astronomical_Twilight'], inplace=True)
 
 # deleting remaining rows since it is only a small percentage of the entire dataset
-data_ori.dropna(subset= ['Zipcode', 'Temperature(F)', 'Humidity(%)', 'Pressure(in)', 'Visibility(mi)', 'Wind_Direction',
+data_ori.dropna(subset= ['City', 'Zipcode', 'Temperature(F)', 'Humidity(%)', 'Pressure(in)', 'Visibility(mi)', 'Wind_Direction',
                          'Wind_Speed(mph)', 'Weather_Condition', 'Sunrise_Sunset',
                          'Civil_Twilight', 'Nautical_Twilight', 'Astronomical_Twilight'], inplace=True)
-print(len(data_ori)) #1370980
-# about 9% of data removed
+print(len(data_ori)) #3713887
+# about x% data removed @irene !!!
 #%% md
 
 ### 5.3 Drop incorrect values
@@ -344,11 +354,11 @@ from 2016 - 2020. Assuming vehicles involved in the accident were not literally 
 
 #%%
 
-# Extreme Temperature -> 5 rows dropped
+# Extreme Temperature -> x rows dropped @irene
 data_ori.drop(data_ori[(data_ori['Temperature(F)'] >= 168.8) | (data_ori['Temperature(F)'] <= -77.8)].index,
               inplace=True)
 
-# Extreme Wind_Speed -> 6 rows dropped
+# Extreme Wind_Speed -> y rows dropped @irene
 data_ori.drop(data_ori[data_ori['Wind_Speed(mph)'] >= 471.8].index, inplace=True)
 
 #%% md
@@ -666,6 +676,9 @@ plt.show()
 
 # ideas: A MAP of the US, showing the accident intensity for each place by colour
 # https://runestone.academy/runestone/books/published/httlads/WorldFacts/cs1_graphing_infant_mortality.html
+#%%
+#@luke !!! TO DO
+#graph of number of accidents per state to show backlog
 
 #%% md
 
@@ -676,6 +689,8 @@ plt.show()
 #%%
 data_prep_wo_bias = data_prep.copy(deep=True)
 
+#dropping states which cause backlog
+#@luke - check if in fact these are the right states !!!!!
 data_prep_wo_bias = data_prep_wo_bias[data_prep_wo_bias['State'] != 'CA']
 data_prep_wo_bias = data_prep_wo_bias[data_prep_wo_bias['State'] != 'FL']
 
@@ -699,13 +714,9 @@ data_prep_wo_bias_2019 = data_prep_wo_bias[data_prep_wo_bias.Year == 2019]
 ### 7.1 Type Conversion
 #### 7.1.1 Label Encoding
 
-TODO: Jasmin @Irene -> is label encoding useful? Is assumes an order in the values, which is not given for county, state, cities.
-    Wouldn't it be of higher relevance to OneHotEncode those as well?
-
 (Update)
 - attempt freq encoding for Counties, Cities
     - one hot encoding for States
-    - binary encoding for Amenity, Bump, Crossing, Give_Way.......Astronomical twilight --done
 
 duration
 TMC: NA is an important information
@@ -731,6 +742,9 @@ data_encoding['Sunrise_Sunset_isDay'] = data_encoding.Sunrise_Sunset.map(day_dic
 data_encoding['Civil_Twilight_isDay'] = data_encoding.Civil_Twilight.map(day_dict)
 data_encoding['Nautical_Twilight_isDay'] = data_encoding.Nautical_Twilight.map(day_dict)
 data_encoding['Astronomical_Twilight_isDay'] = data_encoding.Astronomical_Twilight.map(day_dict)
+#!!!! @irene
+# look at side column - to drop? to conv to bool (you dont need to do this by hand)
+
 
 # drop previous columns without bool values
 columns_to_drop = [
