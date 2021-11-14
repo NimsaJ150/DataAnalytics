@@ -21,7 +21,7 @@ from sklearn import preprocessing
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 import seaborn as sns
-from sklearn.preprocessing import OrdinalEncoder, OneHotEncoder
+from sklearn.preprocessing import OrdinalEncoder, OneHotEncoder, MinMaxScaler
 
 #%% md
 
@@ -63,10 +63,12 @@ df_amz.head()
 
 #%%
 
-#all parameters in original data
+# all parameters in original data
 
 column_list = [
     'ID',
+    'Source',
+    'TMC',
     'Severity',
     'Start_Time',
     'End_Time',
@@ -199,7 +201,7 @@ weather_values = {
 
 # defining day values binary encoding
 day_dict = {
-    'Day' : True,
+    'Day': True,
     'Night': False
 }
 
@@ -252,7 +254,7 @@ Reasons:
 End_Lat, End_Lng - Shows end position of car crash. Full of NaNs.
 Country - Since it is all happening in the US, this is an insignificant column.
 ID - ID of each crash. Unnecessary for modelling reasons.
-Source - API source of where the data comes from. This has no relationship to accident type/severity.
+    Source - API source of where the data comes from. This has no relationship to accident type/severity.
 Description - contains unstructured text data (with typos) which contains information such as address/ zipcode which
 are already present in the data set. Other information in this column such as exact names, details of those involved
 etc are unimportant for our current project.
@@ -307,7 +309,12 @@ checking for nan values in each column
 
 #%%
 
-new_col_list = [] #39 cols
+data_ori['TMC'].replace(np.NAN, 0, inplace=True)
+
+data_ori['TMC'].value_counts()
+#%%
+
+new_col_list = []  #39 cols
 for col in column_list:
     if col not in columns_to_drop:
         new_col_list.append(col)
@@ -334,13 +341,14 @@ for col in new_col_list:
 #deleting nan rows
 
 # deleting 141 total rows - City, Nautical_Twilight
-print(len(data_ori)) #4232541
-data_ori.dropna(subset = ["City", 'Nautical_Twilight'], inplace=True)
+print(len(data_ori))  #4232541
+data_ori.dropna(subset=["City", 'Nautical_Twilight'], inplace=True)
 
 # deleting remaining rows since it is only a small percentage of the entire dataset
-data_ori.dropna(subset= ['City', 'Zipcode', 'Temperature(F)', 'Humidity(%)', 'Pressure(in)', 'Visibility(mi)', 'Wind_Direction',
-                         'Wind_Speed(mph)', 'Weather_Condition'], inplace=True)
-print(len(data_ori)) #3713887
+data_ori.dropna(
+    subset=['City', 'Zipcode', 'Temperature(F)', 'Humidity(%)', 'Pressure(in)', 'Visibility(mi)', 'Wind_Direction',
+            'Wind_Speed(mph)', 'Weather_Condition'], inplace=True)
+print(len(data_ori))  #3713887
 
 # about 12% data removed (all NaNs) -- change --
 #%% md
@@ -492,7 +500,7 @@ data_prep.describe()
 #%%
 
 # histogram of accidents of the biggest cities
-data_prep.City.value_counts()[:20].plot(kind='bar', figsize=(12,6), color="#173F74")
+data_prep.City.value_counts()[:20].plot(kind='bar', figsize=(12, 6), color="#173F74")
 plt.xticks(rotation=30)
 plt.ylabel('Number of accidents')
 plt.title("The 20 US-Cities with most accidents.")
@@ -506,18 +514,19 @@ df_agg = data_prep.loc[:, [x_var, groupby_var]].groupby(groupby_var)
 vals = [data_prep[x_var].values.tolist() for i, data_prep in df_agg]
 
 # Draw
-plt.figure(figsize=(16,9), dpi= 80)
-colors = [plt.cm.Spectral(i/float(len(vals))) for i in range(len(vals))]
-n, bins, patches = plt.hist(vals, data_prep[x_var].unique().__len__(), stacked=True, density=False, color=colors[:len(vals)])
-
+plt.figure(figsize=(16, 9), dpi=80)
+colors = [plt.cm.Spectral(i / float(len(vals))) for i in range(len(vals))]
+n, bins, patches = plt.hist(vals, data_prep[x_var].unique().__len__(), stacked=True, density=False,
+                            color=colors[:len(vals)])
 
 # Decoration
-plt.legend({group:col for group, col in zip(np.unique(data_prep[groupby_var]).tolist(), colors[:len(vals)])})
+plt.legend({group: col for group, col in zip(np.unique(data_prep[groupby_var]).tolist(), colors[:len(vals)])})
 plt.title(f"Stacked Histogram of ${x_var}$ colored by ${groupby_var}$", fontsize=22)
 plt.xlabel(x_var)
 plt.ylabel("Number of Accidents")
 # plt.ylim(0, 40)
-month_list = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December', None]
+month_list = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October',
+              'November', 'December', None]
 plt.xticks(bins, month_list, rotation=90, horizontalalignment='left')
 plt.show()
 
@@ -530,13 +539,13 @@ df_agg = data_prep.loc[:, [x_var, groupby_var]].groupby(groupby_var)
 vals = [data_prep[x_var].values.tolist() for i, data_prep in df_agg]
 
 # Draw
-plt.figure(figsize=(16,9), dpi= 80)
-colors = [plt.cm.Spectral(i/float(len(vals)-1)) for i in range(len(vals))]
-n, bins, patches = plt.hist(vals, data_prep[x_var].unique().__len__(), stacked=True, density=False, color=colors[:len(vals)])
-
+plt.figure(figsize=(16, 9), dpi=80)
+colors = [plt.cm.Spectral(i / float(len(vals) - 1)) for i in range(len(vals))]
+n, bins, patches = plt.hist(vals, data_prep[x_var].unique().__len__(), stacked=True, density=False,
+                            color=colors[:len(vals)])
 
 # Decoration
-plt.legend({group:col for group, col in zip(np.unique(data_prep[groupby_var]).tolist(), colors[:len(vals)])})
+plt.legend({group: col for group, col in zip(np.unique(data_prep[groupby_var]).tolist(), colors[:len(vals)])})
 plt.title(f"Stacked Histogram of ${x_var}$ colored by ${groupby_var}$", fontsize=22)
 plt.xlabel(x_var)
 plt.ylabel("Number of Accidents")
@@ -552,21 +561,23 @@ df_agg = data_prep.loc[:, [x_var, groupby_var]].groupby(groupby_var)
 vals = [data_prep[x_var].values.tolist() for i, data_prep in df_agg]
 
 # Draw
-plt.figure(figsize=(16,9), dpi= 80)
-colors = [plt.cm.Spectral(i/float(len(vals))) for i in range(len(vals))]
-n, bins, patches = plt.hist(vals, data_prep[x_var].unique().__len__(), stacked=True, density=False, color=colors[:len(vals)])
+plt.figure(figsize=(16, 9), dpi=80)
+colors = [plt.cm.Spectral(i / float(len(vals))) for i in range(len(vals))]
+n, bins, patches = plt.hist(vals, data_prep[x_var].unique().__len__(), stacked=True, density=False,
+                            color=colors[:len(vals)])
 print(data_prep[x_var].unique().__len__())
 print(len(bins))
 print(len(patches))
 print(len(vals))
 
 # Decoration
-plt.legend({group:col for group, col in zip(np.unique(data_prep[groupby_var]).tolist(), colors[:len(vals)])})
+plt.legend({group: col for group, col in zip(np.unique(data_prep[groupby_var]).tolist(), colors[:len(vals)])})
 plt.title(f"Stacked Histogram of ${x_var}$ colored by ${groupby_var}$", fontsize=22)
 plt.xlabel(x_var)
 plt.ylabel("Number of Accidents")
 # plt.ylim(0, 40)
-month_list = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December', None]
+month_list = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October',
+              'November', 'December', None]
 plt.xticks(bins, rotation=90, horizontalalignment='left')
 plt.show()
 
@@ -574,7 +585,7 @@ plt.show()
 
 # histogram of accidents according to the weather condition (how to standardize?)
 # preferably after feature engineering
-data_prep.Weather_Condition.value_counts()[:15].plot(kind='bar', figsize=(12,6), color="#173F74")
+data_prep.Weather_Condition.value_counts()[:15].plot(kind='bar', figsize=(12, 6), color="#173F74")
 plt.xticks(rotation=30)
 plt.ylabel('Number of accidents', color="#173F74")
 plt.title("The 15 most common weather conditions.", color="#173F74")
@@ -584,8 +595,8 @@ plt.show()
 
 # ggplot with the development of accidents over time
 plt.style.use('ggplot')
-fig, ax = plt.subplots(figsize=(18,18))
-data_prep.groupby(['Year','Week','Severity']).count()['ID'].unstack().plot(ax=ax, cmap="cividis")  #
+fig, ax = plt.subplots(figsize=(18, 18))
+data_prep.groupby(['Year', 'Week', 'Severity']).count()['ID'].unstack().plot(ax=ax, cmap="cividis")  #
 ax.set_xlabel('Week', color="#173F74")
 ax.set_ylabel('Number of Accidents', color="#173F74")
 ax.set_title("Development of accidents over time distinguished by the severity")
@@ -615,7 +626,7 @@ plt.show()
 #%%
 
 # histogram of accidents filtered by state
-data_prep.State.value_counts().plot(kind='bar', figsize=(12,6), color="#173F74")
+data_prep.State.value_counts().plot(kind='bar', figsize=(12, 6), color="#173F74")
 plt.xticks(rotation=30)
 plt.ylabel('Number of accidents')
 plt.title("The US States ordered by the number of accidents")
@@ -644,10 +655,10 @@ data_prep.corr()
 #%%
 
 # to be adjusted:
-fig=plt.gcf()
-fig.set_size_inches(16,12)
-fig=sns.heatmap(data_prep.corr(),annot=True,linewidths=1,linecolor='k',square=True,mask=False,
-                vmin=-1, vmax=1,cbar_kws={"orientation": "vertical"},cbar=True, cmap="cividis")
+fig = plt.gcf()
+fig.set_size_inches(16, 12)
+fig = sns.heatmap(data_prep.corr(), annot=True, linewidths=1, linecolor='k', square=True, mask=False,
+                  vmin=-1, vmax=1, cbar_kws={"orientation": "vertical"}, cbar=True, cmap="cividis")
 sns.set(style='ticks')
 plt.title("Correlogram of all features")
 
@@ -655,8 +666,8 @@ plt.title("Correlogram of all features")
 
 # to be adjusted:
 # US map simple: scatterplot based on latitude and longitude data, with correct alpha, to show densitiy
-plt.figure(figsize = (15,9))
-sns.scatterplot(x="Start_Lng", y="Start_Lat", data=data_prep, hue ="Severity", legend ="auto",
+plt.figure(figsize=(15, 9))
+sns.scatterplot(x="Start_Lng", y="Start_Lat", data=data_prep, hue="Severity", legend="auto",
                 s=15, palette="cividis", alpha=0.3)
 plt.title("Location of all accidents in the USA in the time from 2016 to 2020, distinguished by severtiy")
 plt.show()
@@ -665,9 +676,9 @@ plt.show()
 
 state_list = data_prep["State"].unique()
 sorted_state_list = sorted(state_list)
-plt.figure(figsize = (16,9))
-g = sns.scatterplot(x="Start_Lng", y="Start_Lat", data=data_prep, hue = "State", hue_order=sorted_state_list,
-                    legend = "auto", s=15, palette="cividis", alpha=0.3)
+plt.figure(figsize=(16, 9))
+g = sns.scatterplot(x="Start_Lng", y="Start_Lat", data=data_prep, hue="State", hue_order=sorted_state_list,
+                    legend="auto", s=15, palette="cividis", alpha=0.3)
 g.legend(loc='center right', bbox_to_anchor=(1.1, 0.5), ncol=2)
 plt.title("Location of all accidents in the USA in the time from 2016 to 2020, distinguished by State")
 plt.show()
@@ -716,24 +727,33 @@ data_prep_wo_bias_2019 = data_prep_wo_bias[data_prep_wo_bias.Year == 2019]
 # Preparation
 data_encoding = data_prep_wo_bias.copy(deep=True)
 data_encoding.reset_index(inplace=True)
-data_encoding.drop(['index'], axis= 1, inplace=True)
+data_encoding.drop(['index'], axis=1, inplace=True)
 data_encoding.head()
-
 
 #%% md
 
 ### 7.1 Type Conversion
-#### 7.1.1 Label Encoding
+#### 7.1.1 Ordinal Encoding
 
 (Update)
-- attempt freq encoding for Counties, Cities
+- attempt freq encoding for Counties
+    - attempt ordianl encoding for Streets, Cities
     - one hot encoding for States
 
 duration
 
-
-
 #%%
+
+ordinal_encoder = OrdinalEncoder()
+
+data_encoding[['Street']] = ordinal_encoder.fit_transform(data_encoding[['Street']])
+print(ordinal_encoder.categories_)
+
+data_encoding[['City']] = ordinal_encoder.fit_transform(data_encoding[['City']])
+print(ordinal_encoder.categories_)
+#%%
+
+data_encoding.head()
 
 #%% md
 
@@ -745,6 +765,35 @@ Ordinal encoding for columns with Day/Night values to bool - Sunrise_Sunset, Civ
 #TODO: encode Side?
 # TODO: what about all the true/false values?
 
+data_encoding[['Side']] = ordinal_encoder.fit_transform(data_encoding[['Side']])
+print(ordinal_encoder.categories_)
+
+#%%
+data_encoding[['Nautical_Twilight']] = ordinal_encoder.fit_transform(data_encoding[['Nautical_Twilight']])
+print(ordinal_encoder.categories_)
+
+#%%
+
+bool_columns = [
+    'Amenity',
+    'Bump',
+    'Crossing',
+    'Give_Way',
+    'Junction',
+    'No_Exit',
+    'Railway',
+    'Roundabout',
+    'Station',
+    'Stop',
+    'Traffic_Calming',
+    'Traffic_Signal',
+]
+
+for column in bool_columns:
+    data_encoding[[column]] = ordinal_encoder.fit_transform(data_encoding[[column]])
+    print(ordinal_encoder.categories_)
+
+#%%
 data_encoding['Nautical_Twilight_isDay'] = data_encoding.Nautical_Twilight.map(day_dict)
 
 #!!!! @irene
@@ -770,7 +819,7 @@ For states
 #%%
 
 ohc = OneHotEncoder()
-one_hot_encoded = ohc.fit_transform(data_encoding.State.values.reshape(-1,1)).toarray()
+one_hot_encoded = ohc.fit_transform(data_encoding.State.values.reshape(-1, 1)).toarray()
 #%%
 # generate array with correct column names
 categories = ohc.categories_
@@ -784,18 +833,19 @@ for category in categories[0]:
 one_hot_data = pd.DataFrame(one_hot_encoded, columns=column_names)
 #%%
 # delete one column to avoid the dummy variable trap
-one_hot_data.drop(['AL'], axis= 1, inplace=True)
+one_hot_data.drop(one_hot_data.columns[-1], axis=1, inplace=True)
 
 # combining ohc dataframe to previous df
-data_encoding = pd.concat([data_encoding, one_hot_data], axis = 1)
+data_encoding = pd.concat([data_encoding, one_hot_data], axis=1)
+
+data_encoding.drop('State', axis=1, inplace=True)
 data_encoding.head()
 
+#%% md
+For Wind Direction
+
 #%%
-
-# For Wind Direction
-
-ohc = OneHotEncoder()
-one_hot_encoded = ohc.fit_transform(data_encoding.Wind_Direction.values.reshape(-1,1)).toarray()
+one_hot_encoded = ohc.fit_transform(data_encoding.Wind_Direction.values.reshape(-1, 1)).toarray()
 
 # generate array with correct column names
 categories = ohc.categories_
@@ -814,11 +864,13 @@ one_hot_data.head()
 
 
 # delete one column to avoid the dummy variable trap
-# one_hot_data.drop(['AL'], axis= 1, inplace=True)
+one_hot_data.drop(one_hot_data.columns[-1], axis=1, inplace=True)
 
 # combining ohc dataframe to previous df
-# data_encoding = pd.concat([data_encoding, one_hot_data], axis = 1)
-# data_encoding.head()
+data_encoding = pd.concat([data_encoding, one_hot_data], axis=1)
+
+data_encoding.drop('Wind_Direction', axis=1, inplace=True)
+data_encoding.head()
 
 #%% md
 
@@ -845,11 +897,12 @@ for category in categories[0]:
 data_one_hot = pd.DataFrame(data_one_hot_array, columns=column_names)
 
 # delete one column to avoid the dummy variable trap
-data_one_hot.drop('None', axis=1, inplace=True) # drop last n rows
+data_one_hot.drop(data_one_hot.columns[-1], axis=1, inplace=True)  # drop last n rows
 data_one_hot.head()
 #%%
 
-split_words= ['/', 'and', 'with', ' ']
+split_words = ['/', 'and', 'with', ' ']
+
 
 def replace(value, split_value, split_index):
     if split_value in weather_values:
@@ -864,16 +917,19 @@ def replace(value, split_value, split_index):
             if split_index < len(split_words):
                 split_values = split_value.split(split_words[split_index])
                 for split_value in split_values:
-                    split_value=split_value.strip()
-                    replace(value, split_value, split_index+1)
+                    split_value = split_value.strip()
+                    replace(value, split_value, split_index + 1)
             else:
                 print(split_value)
         except AttributeError or TypeError:
             print(str(value) + "!")
 
+
 for column in data_one_hot:
     replace(column, column, 0)
 
+
+data_encoding.drop('Weather_Condition', axis=1, inplace=True)
 #%% md
 
 #### 7.1.5 Frequency encoding
@@ -881,15 +937,23 @@ For Street, City, County
 
 #%%
 county_dict = data_encoding['County'].value_counts().to_dict()
-state_dict = data_encoding['State'].value_counts().to_dict()
-street_dict = data_encoding['Street'].value_counts().to_dict()
+# state_dict = data_encoding['State'].value_counts().to_dict()
+# street_dict = data_encoding['Street'].value_counts().to_dict()
 
 #%%
+# Ordinal Freq Encoding
+county_array = county_dict.keys()
+
+county_encoder = OrdinalEncoder(categories=county_array)
+data_encoding[['County']] = ordinal_encoder.fit_transform(data_encoding[['County']])
+
+#%%
+# Real Freq Encoding
 data_encoding['County'] = data_encoding['County'].replace(county_dict)
 
 #%%
-data_encoding['City'] = data_encoding['City'].replace(state_dict)
-data_encoding['Street'] = data_encoding['Street'].replace(street_dict)
+# data_encoding['City'] = data_encoding['City'].replace(state_dict)
+# data_encoding['Street'] = data_encoding['Street'].replace(street_dict)
 
 
 #%% md
@@ -904,7 +968,7 @@ d = data_encoding['Start_Time']
 data_encoding['N_Start_Time'] = d.view('int64')
 
 # dropping original Start_Time column
-data_encoding.drop('Start_Time', axis=1)
+data_encoding.drop('Start_Time', axis=1, inplace=True)
 
 #%% md
 
@@ -912,16 +976,19 @@ data_encoding.drop('Start_Time', axis=1)
 
 #%%
 
-data_final = data_encoding.copy(deep=True)
+data_final = data_encoding.copy(deep=True)[:500]
 
 # divide columns into dependant and independant
 data_independant = data_final.drop(['Severity'], axis=1)
 data_dependant = data_final[['Severity']]
 
-# normalize the data between 0 and 1
-data_independent = (data_independant - data_independant.min()) / (data_independant.max() - data_independant.min())
+data_independant.head()
+#%%
 
-
+x = data_independant.values # returns a numpy array
+min_max_scaler = MinMaxScaler()
+x_scaled = min_max_scaler.fit_transform(x)
+data_independant = pd.DataFrame(x_scaled)
 
 #%% md
 
@@ -931,11 +998,22 @@ data_independent = (data_independant - data_independant.min()) / (data_independa
 
 #%%
 
+# assign data
+X = data_independant
+Y = data_dependant
 
+# generate test and trainings set
+X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2, random_state=4)
 
 #%% md
 
 ### 8.2 Sampling
+
+#%%
+
+# concatenate data for sampling
+data = X_train.copy(deep=True)
+data['severity'] = Y_train
 
 #%%
 
