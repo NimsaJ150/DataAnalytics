@@ -247,10 +247,10 @@ Number, Temperature(F)	Wind_Chill(F)	Humidity(%)	Pressure(in)	Visibility(mi)	Win
 Dropping irrelevant columns.
 !!!!! Add more reasons @irene
 'End_Lat',
-    'End_Lng',
-    'Country',
-    'ID',
-    'Source'
+'End_Lng',
+'Country',
+'ID',
+'Source'
 
 Reasons:
 Description - contains unstructured text data (with typos) which contains information such as address/ zipcode which
@@ -383,10 +383,6 @@ data_ori['Zipcode'] = data_ori['Zipcode'].str[:5]
 TODO: (Luke) fil End_lat and End_Lng by Start_Lat and Start_Lng (check prior what is the average difference between the two)
 the point is: Even if we know, that the distance is 5km, the end of the accident/traffic jam can be in all cardinal
 directions. Thus setting the end to the same coordinates is the best proxy.
-
-#%%
-
-data_ori.drop(columns=['End_Lat', 'End_Lng'])
 
 #%%
 
@@ -711,6 +707,18 @@ data_prep_wo_bias_2019 = data_prep_wo_bias[data_prep_wo_bias.Year == 2019]
 
 ---
 ## 7 Feature Engineering
+
+#%%
+
+# Preparation
+data_encoding = data_prep_wo_bias.copy(deep=True)
+data_encoding.reset_index(inplace=True)
+data_encoding.drop(['index'], axis= 1, inplace=True)
+data_encoding.head()
+
+
+#%% md
+
 ### 7.1 Type Conversion
 #### 7.1.1 Label Encoding
 
@@ -719,14 +727,10 @@ data_prep_wo_bias_2019 = data_prep_wo_bias[data_prep_wo_bias.Year == 2019]
     - one hot encoding for States
 
 duration
-TMC: NA is an important information
 
 
 
 #%%
-
-data_encoding = data_prep_wo_bias.copy(deep=True)
-
 
 #%% md
 
@@ -764,11 +768,12 @@ data_ori.head(10)
 
 For states
 **why have new rows been added at this step? (for data_encoding df) !!!!!!!!!
+
 #%%
 
 ohc = OneHotEncoder()
 one_hot_encoded = ohc.fit_transform(data_encoding.State.values.reshape(-1,1)).toarray()
-
+#%%
 # generate array with correct column names
 categories = ohc.categories_
 column_names = []
@@ -779,7 +784,7 @@ for category in categories[0]:
 
 # set correct column names
 one_hot_data = pd.DataFrame(one_hot_encoded, columns=column_names)
-
+#%%
 # delete one column to avoid the dummy variable trap
 one_hot_data.drop(['AL'], axis= 1, inplace=True)
 
@@ -789,7 +794,7 @@ data_encoding.head()
 
 #%%
 
-#For Wind Direction
+# For Wind Direction
 
 ohc = OneHotEncoder()
 one_hot_encoded = ohc.fit_transform(data_encoding.Wind_Direction.values.reshape(-1,1)).toarray()
@@ -877,12 +882,16 @@ for column in data_one_hot:
 For Street, City, County
 
 #%%
-
-data_encoding['County'] = data_encoding['County'].replace(data_encoding['County'].value_counts())
+county_dict = data_encoding['County'].value_counts().to_dict()
+state_dict = data_encoding['State'].value_counts().to_dict()
+street_dict = data_encoding['Street'].value_counts().to_dict()
 
 #%%
-data_encoding['City'] = data_encoding['City'].replace(data_encoding['Street'].value_counts())
-data_encoding['Street'] = data_encoding['Street'].replace(data_encoding['Street'].value_counts())
+data_encoding['County'] = data_encoding['County'].replace(county_dict)
+
+#%%
+data_encoding['City'] = data_encoding['City'].replace(state_dict)
+data_encoding['Street'] = data_encoding['Street'].replace(street_dict)
 
 
 #%% md
@@ -913,8 +922,6 @@ data_dependant = data_final[['Severity']]
 
 # normalize the data between 0 and 1
 data_independent = (data_independant - data_independant.min()) / (data_independant.max() - data_independant.min())
-
-
 
 #%% md
 
