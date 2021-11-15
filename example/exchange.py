@@ -1105,9 +1105,61 @@ print("Confusion Matrix Testing:\n", cmte)
 plot_confusion_matrix(knnmodel, X_test, Y_test, labels=[1, 2, 3, 4],
                       cmap=plt.cm.Blues, values_format='d')
 
-
 #%% md
 
+#### 8.3.2 Decision Trees
+#%% md
+
+#### 8.3.3 Neural Networks
+#%%
+from sklearn.neural_network import MLPClassifier
+nnetmodel = MLPClassifier(max_iter=400)
+
+from sklearn.model_selection import GridSearchCV
+param_grid = {
+    'hidden_layer_sizes': [(3,), (5,), (9,)],
+    'activation': ['logistic', 'tanh', 'relu']
+}
+
+CV_nnetmodel = GridSearchCV(estimator=nnetmodel, param_grid=param_grid, cv=10)
+CV_nnetmodel.fit(X_train, Y_train)
+print(CV_nnetmodel.best_params_)
+
+# use the best parameters
+nnetmodel = nnetmodel.set_params(**CV_nnetmodel.best_params_)
+nnetmodel.fit(X_train, Y_train)
+
+#%%
+# predict training and test data
+Y_train_pred = nnetmodel.predict(X_train)
+acctrain = accuracy_score(Y_train, Y_train_pred)
+
+Y_test_pred = nnetmodel.predict(X_test)
+acctest = accuracy_score(Y_test, Y_test_pred)
+
+#%%
+# fill report
+report.loc[len(report)] = ['k-NN (grid)',
+                           CV_nnetmodel.cv_results_['mean_test_score'][CV_nnetmodel.best_index_],
+                           CV_nnetmodel.cv_results_['std_test_score'][CV_nnetmodel.best_index_],
+                           acctrain,
+                           acctest]
+print(report.loc[len(report)-1])
+
+#%%
+# visualize confusion matrix
+from sklearn.metrics import confusion_matrix, plot_confusion_matrix
+
+cmtr = confusion_matrix(Y_train, Y_train_pred)
+print("Confusion Matrix Training:\n", cmtr)
+cmte = confusion_matrix(Y_test, Y_test_pred)
+print("Confusion Matrix Testing:\n", cmte)
+
+#%%
+plot_confusion_matrix(nnetmodel, X_test, Y_test, labels=[1, 2, 3, 4],
+                      cmap=plt.cm.Blues, values_format='d')
+
+#%% md
 ### 8.4 Testing
 
 #%% md
@@ -1115,4 +1167,9 @@ plot_confusion_matrix(knnmodel, X_test, Y_test, labels=[1, 2, 3, 4],
 ### 8.5 Prediction driving factors
 
 # SHAP diagram
+
+
+
+
+
 
