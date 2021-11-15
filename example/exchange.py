@@ -18,6 +18,8 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn import preprocessing
+
+from sklearn.metrics import accuracy_score, confusion_matrix
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 import seaborn as sns
@@ -310,9 +312,8 @@ data_ori.drop(columns=columns_to_drop, inplace=True)  # inplace -> no need to st
 checking for nan values in each column
 
 #%%
-
+# assuming, that no TMC value means it is not a severe accident (not severe enough to be mentioned)
 data_ori['TMC'].replace(np.NAN, 0, inplace=True)
-
 data_ori['TMC'].value_counts()
 #%%
 
@@ -340,17 +341,17 @@ for col in new_col_list:
         print(col, nan_sum)
 
 #%%
-#deleting nan rows
+# deleting nan rows
 
 # deleting 141 total rows - City, Nautical_Twilight
-print(len(data_ori))  #4232541
+print(len(data_ori))  # 4232541
 data_ori.dropna(subset=["City", 'Nautical_Twilight'], inplace=True)
 
 # deleting remaining rows since it is only a small percentage of the entire dataset
 data_ori.dropna(
     subset=['City', 'Zipcode', 'Temperature(F)', 'Humidity(%)', 'Pressure(in)', 'Visibility(mi)', 'Wind_Direction',
             'Wind_Speed(mph)', 'Weather_Condition'], inplace=True)
-print(len(data_ori))  #3713887
+print(len(data_ori))  # 3713887
 
 # about 12% data removed (all NaNs)
 #%% md
@@ -728,7 +729,6 @@ data_prep_wo_bias_2019 = data_prep_wo_bias[data_prep_wo_bias.Year == 2019]
 # Preparation
 data_encoding = data_prep_wo_bias.copy(deep=True)
 data_encoding.reset_index(inplace=True, drop=True)
-# data_encoding.drop(['index'], axis= 1, inplace=True)
 data_encoding.head()
 
 
@@ -745,7 +745,7 @@ data_encoding.head()
 duration
 
 #%%
-
+# ordinal encoding instead of frequency encoding -> time reasons
 ordinal_encoder = OrdinalEncoder()
 
 data_encoding[['Street']] = ordinal_encoder.fit_transform(data_encoding[['Street']])
@@ -753,9 +753,6 @@ print(ordinal_encoder.categories_)
 
 data_encoding[['City']] = ordinal_encoder.fit_transform(data_encoding[['City']])
 print(ordinal_encoder.categories_)
-#%%
-
-data_encoding.head()
 
 #%% md
 
@@ -794,32 +791,12 @@ for column in bool_columns:
     data_encoding[[column]] = ordinal_encoder.fit_transform(data_encoding[[column]])
     print(ordinal_encoder.categories_)
 
-#%%
-data_encoding['Nautical_Twilight_isDay'] = data_encoding.Nautical_Twilight.map(day_dict)
-
-
-#%%
-#for side
-# data_encoding.reset_index(inplace=True, drop=True)
-data_encoding['is_RightSide'] = data_encoding.Side.map(side_dict)
-
-# drop previous columns without bool values
-columns_to_drop = [
-    'Nautical_Twilight',
-    'Side'
-]
-
-data_encoding.drop(columns=columns_to_drop, inplace=True)
-data_ori.head(10)
-
-
 #%% md
 
 #### 7.1.3 OneHot Encoding
 ##### TODO : Irene @Jasmin - just wanna double check if I did this right
 
 For states
-**why have new rows been added at this step? (for data_encoding df) !!!!!!!!!
 
 #%%
 
@@ -863,10 +840,6 @@ for category in categories[0]:
 # set correct column names
 one_hot_data = pd.DataFrame(one_hot_encoded, columns=column_names)
 one_hot_data.head()
-
-# there is a NaN column even though nan values have already been removed.
-#Might be the new rows ??? TODO !!!!!
-
 
 # delete one column to avoid the dummy variable trap
 one_hot_data.drop(one_hot_data.columns[-1], axis=1, inplace=True)
@@ -942,8 +915,6 @@ For Street, City, County
 
 #%%
 county_dict = data_encoding['County'].value_counts().to_dict()
-# state_dict = data_encoding['State'].value_counts().to_dict()
-# street_dict = data_encoding['Street'].value_counts().to_dict()
 
 #%%
 # Ordinal Freq Encoding
@@ -953,13 +924,8 @@ county_encoder = OrdinalEncoder(categories=county_array)
 data_encoding[['County']] = ordinal_encoder.fit_transform(data_encoding[['County']])
 
 #%%
-# Real Freq Encoding
-data_encoding['County'] = data_encoding['County'].replace(county_dict)
-
-#%%
-# data_encoding['City'] = data_encoding['City'].replace(state_dict)
-# data_encoding['Street'] = data_encoding['Street'].replace(street_dict)
-
+# Real Freq Encoding -> takes a lot of time because of looping?
+# data_encoding['County'] = data_encoding['County'].replace(county_dict)
 
 #%% md
 
@@ -995,6 +961,9 @@ min_max_scaler = MinMaxScaler()
 x_scaled = min_max_scaler.fit_transform(x)
 data_independant = pd.DataFrame(x_scaled)
 
+# TODO:  restore column names
+#%%
+data_independant.head()
 #%% md
 
 ---
@@ -1014,6 +983,7 @@ X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2, random_
 
 ### 8.2 Sampling
 
+Training data
 #%%
 
 # concatenate data for sampling
@@ -1044,21 +1014,96 @@ def balanced_subsample(y, size=None, random_state=None): # returns a List with r
 
     return subsample
 
-rows = balanced_subsample(data_tbsampled['severity'], random_state=0)
+rows = balanced_subsample(data_tbsampled['severity'], size = 4000, random_state=0)
 #%%
 data_downsampled = data_tbsampled.iloc[rows, :]
 
-#%% md
+X_train = data_downsampled.drop('severity', axis=1)
+Y_train = data_downsampled['severity']
 
-### 8.3 ""Model""
+#%% md
+Test Data
 
 #%%
 
-# How much does the inclusion of apples mobility value increase the accurancy of our prediction model?
-# LSTM-GBRT https://downloads.hindawi.com/journals/jcse/2020/4206919.pdf
-# hybrid K-means and random forest https://link.springer.com/content/pdf/10.1007/s42452-020-3125-1.pdf
-# OCT https://towardsdatascience.com/using-machine-learning-to-predict-car-accidents-44664c79c942
-# Regression-kriging https://carto.com/blog/predicting-traffic-accident-hotspots-with-spatial-data-science/
+# concatenate data for sampling
+data_test_tbsampled = X_test.copy(deep=True)
+data_test_tbsampled['severity'] = Y_test
+
+data_test_tbsampled.reset_index(inplace=True, drop=True)
+
+#%%
+from sklearn.utils import resample
+data_test_sampled = resample(data_test_tbsampled, replace=False, n_samples=4000, random_state=0)
+
+#%%
+
+X_test = data_test_sampled.drop('severity', axis=1)
+Y_test = data_test_sampled['severity']
+
+#%% md
+
+### 8.3 Fitting
+#%% md
+
+How much does the inclusion of apples mobility value increase the accurancy of our prediction model?
+LSTM-GBRT https://downloads.hindawi.com/journals/jcse/2020/4206919.pdf
+hybrid K-means and random forest https://link.springer.com/content/pdf/10.1007/s42452-020-3125-1.pdf
+OCT https://towardsdatascience.com/using-machine-learning-to-predict-car-accidents-44664c79c942
+Regression-kriging https://carto.com/blog/predicting-traffic-accident-hotspots-with-spatial-data-science/
+#%%
+report = pd.DataFrame(columns=['Model','Mean Acc. Training','Standard Deviation', 'Acc. Train', 'Acc. Test'])
+
+
+#%% md
+
+#### 8.3.1 KNN, Random Forests, Neural Networks
+#%%
+from sklearn.neighbors import KNeighborsClassifier
+knnmodel = KNeighborsClassifier()
+
+from sklearn.model_selection import GridSearchCV
+param_grid = {
+    'n_neighbors': [ 3, 4, 5]
+}
+
+CV_knnmodel = GridSearchCV(estimator=knnmodel, param_grid=param_grid, cv=10)
+CV_knnmodel.fit(X_train, Y_train)
+print(CV_knnmodel.best_params_)
+
+# use the best parameters
+knnmodel = knnmodel.set_params(**CV_knnmodel.best_params_)
+knnmodel.fit(X_train, Y_train)
+
+#%%
+# predict training and test data
+Y_train_pred = knnmodel.predict(X_train)
+acctrain = accuracy_score(Y_train, Y_train_pred)
+
+Y_test_pred = knnmodel.predict(X_test)
+acctest = accuracy_score(Y_test, Y_test_pred)
+
+#%%
+# fill report
+report.loc[len(report)] = ['k-NN (grid)',
+                           CV_knnmodel.cv_results_['mean_test_score'][CV_knnmodel.best_index_],
+                           CV_knnmodel.cv_results_['std_test_score'][CV_knnmodel.best_index_],
+                           acctrain,
+                           acctest]
+print(report.loc[len(report)-1])
+
+#%%
+# visualize confusion matrix
+from sklearn.metrics import confusion_matrix, plot_confusion_matrix
+
+cmtr = confusion_matrix(Y_train, Y_train_pred)
+print("Confusion Matrix Training:\n", cmtr)
+cmte = confusion_matrix(Y_test, Y_test_pred)
+print("Confusion Matrix Testing:\n", cmte)
+
+#%%
+plot_confusion_matrix(knnmodel, X_test, Y_test, labels=[1, 2, 3, 4],
+                      cmap=plt.cm.Blues, values_format='d')
 
 
 #%% md
@@ -1070,9 +1115,4 @@ data_downsampled = data_tbsampled.iloc[rows, :]
 ### 8.5 Prediction driving factors
 
 # SHAP diagram
-
-
-
-
-
 
