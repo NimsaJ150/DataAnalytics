@@ -746,6 +746,7 @@ duration
 
 #%%
 # ordinal encoding instead of frequency encoding -> time reasons
+# for report: talk about adv & disadv
 ordinal_encoder = OrdinalEncoder()
 
 data_encoding[['Street']] = ordinal_encoder.fit_transform(data_encoding[['Street']])
@@ -761,12 +762,12 @@ Ordinal encoding for columns with Day/Night values to bool - Nautical_Twilight
 Ordinal encoding for Side (Left/Right) to bool
 
 #%%
-# TODO: what about all the true/false values?
-
+# L - 0, R - 1
 data_encoding[['Side']] = ordinal_encoder.fit_transform(data_encoding[['Side']])
 print(ordinal_encoder.categories_)
 
 #%%
+#Day - 0, Night 1
 data_encoding[['Nautical_Twilight']] = ordinal_encoder.fit_transform(data_encoding[['Nautical_Twilight']])
 print(ordinal_encoder.categories_)
 
@@ -794,7 +795,6 @@ for column in bool_columns:
 #%% md
 
 #### 7.1.3 OneHot Encoding
-##### TODO : Irene @Jasmin - just wanna double check if I did this right
 
 For states
 
@@ -918,7 +918,7 @@ county_dict = data_encoding['County'].value_counts().to_dict()
 
 #%%
 # Ordinal Freq Encoding
-county_array = county_dict.keys()
+county_array = county_dict.keys() #keys from the dict are now arranged in descending order in the array. Most frequent -> least
 
 county_encoder = OrdinalEncoder(categories=county_array)
 data_encoding[['County']] = ordinal_encoder.fit_transform(data_encoding[['County']])
@@ -949,21 +949,22 @@ data_encoding.drop('Start_Time', axis=1, inplace=True)
 
 data_final = data_encoding.copy(deep=True)
 
-# divide columns into dependant and independant
-data_independant = data_final.drop(['Severity'], axis=1)
+# divide columns into dependant and independent
+data_independent = data_final.drop(['Severity'], axis=1)
 data_dependant = data_final[['Severity']]
 
-data_independant.head()
+data_independent.head()
 #%%
+# to scale each column so that every feature/parameter has equal weight
 
-x = data_independant.values # returns a numpy array
+# x = data_independent.values # returns a numpy array with all the values of the dataframe
 min_max_scaler = MinMaxScaler()
-x_scaled = min_max_scaler.fit_transform(x)
-data_independant = pd.DataFrame(x_scaled)
+# x_scaled = min_max_scaler.fit_transform(x)
+# data_independent = pd.DataFrame(x_scaled)
 
-# TODO:  restore column names
-#%%
-data_independant.head()
+# TODO:  restore column names. Irene: proposed change. But it might be taking longer than before
+data_independent = pd.DataFrame(min_max_scaler.fit_transform(data_independent), index=data_independent.index, columns=data_independent.columns)
+data_independent.head()
 #%% md
 
 ---
@@ -973,7 +974,7 @@ data_independant.head()
 #%%
 
 # assign data
-X = data_independant
+X = data_independent
 Y = data_dependant
 
 # generate test and trainings set
@@ -996,6 +997,7 @@ data_tbsampled.reset_index(inplace=True, drop=True)
 severity_values = Y_train['Severity'].value_counts()
 
 #%%
+# ensuring every severity level has equal proportions in the data
 def balanced_subsample(y, size=None, random_state=None): # returns a List with randomly chosen row numbers
     subsample = []
     if size is None:
@@ -1025,6 +1027,7 @@ Y_train = data_downsampled['severity']
 Test Data
 
 #%%
+#making sure train Y has the same number of rows
 
 # concatenate data for sampling
 data_test_tbsampled = X_test.copy(deep=True)
@@ -1057,7 +1060,7 @@ report = pd.DataFrame(columns=['Model','Mean Acc. Training','Standard Deviation'
 
 #%% md
 
-#### 8.3.1 KNN, Random Forests, Neural Networks
+#### 8.3.1 KNN
 #%%
 from sklearn.neighbors import KNeighborsClassifier
 knnmodel = KNeighborsClassifier()
@@ -1108,6 +1111,52 @@ plot_confusion_matrix(knnmodel, X_test, Y_test, labels=[1, 2, 3, 4],
 #%% md
 
 #### 8.3.2 Decision Trees
+#%%
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.datasets import make_classification
+dtree_model = RandomForestClassifier()
+
+from sklearn.model_selection import GridSearchCV
+param_grid = {
+    'n_estimators': [50,100,150],
+    'max_depth': [5,6,7,8] #why not more? it is suggested that the best number of splits lie between 5-8
+}
+
+CV_dtree_model = GridSearchCV(estimator=dtree_model, param_grid=param_grid, cv=10)
+CV_dtree_model.fit(X_train, Y_train)
+print(CV_dtree_model.best_params_)
+
+# use the best parameters
+dtree_model = dtree_model.set_params(**CV_dtree_model.best_params_)
+dtree_model.fit(X_train, Y_train)
+#%%
+# predict training and test data
+Y_train_pred = dtree_model.predict(X_train)
+acctrain = accuracy_score(Y_train, Y_train_pred)
+
+Y_test_pred = dtree_model.predict(X_test)
+acctest = accuracy_score(Y_test, Y_test_pred)
+
+#%%
+# fill report
+report.loc[len(report)] = ['Random Forest Classifier (grid)',
+                           CV_dtree_model.cv_results_['mean_test_score'][CV_dtree_model.best_index_],
+                           CV_dtree_model.cv_results_['std_test_score'][CV_dtree_model.best_index_],
+                           acctrain,
+                           acctest]
+print(report.loc[len(report)-1])
+
+#%%
+# visualize confusion matrix
+from sklearn.metrics import confusion_matrix, plot_confusion_matrix
+
+cmtr = confusion_matrix(Y_train, Y_train_pred)
+print("Confusion Matrix Training:\n", cmtr)
+cmte = confusion_matrix(Y_test, Y_test_pred)
+print("Confusion Matrix Testing:\n", cmte)
+
+#%%
+plot_confusion_matrix(dtree_model, X_test, Y_test, labels=[1, 2, 3, 4], cmap=plt.cm.Blues, values_format='d')
 #%% md
 
 #### 8.3.3 Neural Networks
@@ -1139,7 +1188,7 @@ acctest = accuracy_score(Y_test, Y_test_pred)
 
 #%%
 # fill report
-report.loc[len(report)] = ['k-NN (grid)',
+report.loc[len(report)] = ['Neural Networks (grid)',
                            CV_nnetmodel.cv_results_['mean_test_score'][CV_nnetmodel.best_index_],
                            CV_nnetmodel.cv_results_['std_test_score'][CV_nnetmodel.best_index_],
                            acctrain,
@@ -1158,9 +1207,6 @@ print("Confusion Matrix Testing:\n", cmte)
 #%%
 plot_confusion_matrix(nnetmodel, X_test, Y_test, labels=[1, 2, 3, 4],
                       cmap=plt.cm.Blues, values_format='d')
-
-#%% md
-### 8.4 Testing
 
 #%% md
 
