@@ -709,7 +709,6 @@ data_prep_wo_bias = data_prep_wo_bias[data_prep_wo_bias['State'] != 'FL']
 #%%
 data_prep_wo_bias_2020 = data_prep_wo_bias[data_prep_wo_bias.Year == 2020]
 data_prep_wo_bias_2019 = data_prep_wo_bias[data_prep_wo_bias.Year == 2019]
-
 #%% md
 
 #### 6.5.2 Comparison
@@ -728,10 +727,16 @@ data_prep_wo_bias_2019 = data_prep_wo_bias[data_prep_wo_bias.Year == 2019]
 
 # Preparation
 data_encoding = data_prep_wo_bias.copy(deep=True)
+
+data_encoding = data_encoding[data_encoding['Year'] >= 2017]
+data_encoding = data_encoding[(data_encoding['Year'] != 2020) | (data_encoding['Month'] < 7)]
+data_encoding = data_encoding[data_encoding['Severity'] != 1]
+
 data_encoding.reset_index(inplace=True, drop=True)
 data_encoding.head()
+#%%
 
-
+data_encoding['Severity'].value_counts()
 #%% md
 
 ### 7.1 Type Conversion
@@ -957,13 +962,13 @@ data_independent.head()
 #%%
 # to scale each column so that every feature/parameter has equal weight
 
-# x = data_independent.values # returns a numpy array with all the values of the dataframe
+x = data_independent.values # returns a numpy array with all the values of the dataframe
 min_max_scaler = MinMaxScaler()
-# x_scaled = min_max_scaler.fit_transform(x)
+x_scaled = min_max_scaler.fit_transform(x)
 # data_independent = pd.DataFrame(x_scaled)
 
 # TODO:  restore column names. Irene: proposed change. But it might be taking longer than before
-data_independent = pd.DataFrame(min_max_scaler.fit_transform(data_independent), index=data_independent.index, columns=data_independent.columns)
+data_independent = pd.DataFrame(x_scaled, index=data_independent.index, columns=data_independent.columns)
 data_independent.head()
 #%% md
 
@@ -995,7 +1000,7 @@ data_tbsampled.reset_index(inplace=True, drop=True)
 #%%
 
 severity_values = Y_train['Severity'].value_counts()
-
+severity_values
 #%%
 # ensuring every severity level has equal proportions in the data
 def balanced_subsample(y, size=None, random_state=None): # returns a List with randomly chosen row numbers
@@ -1016,7 +1021,7 @@ def balanced_subsample(y, size=None, random_state=None): # returns a List with r
 
     return subsample
 
-rows = balanced_subsample(data_tbsampled['severity'], size = 4000, random_state=0)
+rows = balanced_subsample(data_tbsampled['severity'], size=20000, random_state=0)
 #%%
 data_downsampled = data_tbsampled.iloc[rows, :]
 
@@ -1037,7 +1042,7 @@ data_test_tbsampled.reset_index(inplace=True, drop=True)
 
 #%%
 from sklearn.utils import resample
-data_test_sampled = resample(data_test_tbsampled, replace=False, n_samples=4000, random_state=0)
+data_test_sampled = resample(data_test_tbsampled, replace=False, n_samples=2000, random_state=0)
 
 #%%
 
@@ -1055,7 +1060,7 @@ hybrid K-means and random forest https://link.springer.com/content/pdf/10.1007/s
 OCT https://towardsdatascience.com/using-machine-learning-to-predict-car-accidents-44664c79c942
 Regression-kriging https://carto.com/blog/predicting-traffic-accident-hotspots-with-spatial-data-science/
 #%%
-report = pd.DataFrame(columns=['Model','Mean Acc. Training','Standard Deviation', 'Acc. Train', 'Acc. Test'])
+report = pd.DataFrame(columns=['Model','Mean Acc. Training','Standard Deviation', 'Acc. Test'])
 
 
 #%% md
@@ -1063,7 +1068,7 @@ report = pd.DataFrame(columns=['Model','Mean Acc. Training','Standard Deviation'
 #### 8.3.1 KNN
 #%%
 from sklearn.neighbors import KNeighborsClassifier
-knnmodel = KNeighborsClassifier()
+knnmodel = KNeighborsClassifier(n_jobs=-1)
 
 from sklearn.model_selection import GridSearchCV
 param_grid = {
@@ -1079,10 +1084,6 @@ knnmodel = knnmodel.set_params(**CV_knnmodel.best_params_)
 knnmodel.fit(X_train, Y_train)
 
 #%%
-# predict training and test data
-Y_train_pred = knnmodel.predict(X_train)
-acctrain = accuracy_score(Y_train, Y_train_pred)
-
 Y_test_pred = knnmodel.predict(X_test)
 acctest = accuracy_score(Y_test, Y_test_pred)
 
@@ -1091,7 +1092,6 @@ acctest = accuracy_score(Y_test, Y_test_pred)
 report.loc[len(report)] = ['k-NN (grid)',
                            CV_knnmodel.cv_results_['mean_test_score'][CV_knnmodel.best_index_],
                            CV_knnmodel.cv_results_['std_test_score'][CV_knnmodel.best_index_],
-                           acctrain,
                            acctest]
 print(report.loc[len(report)-1])
 
@@ -1099,13 +1099,11 @@ print(report.loc[len(report)-1])
 # visualize confusion matrix
 from sklearn.metrics import confusion_matrix, plot_confusion_matrix
 
-cmtr = confusion_matrix(Y_train, Y_train_pred)
-print("Confusion Matrix Training:\n", cmtr)
 cmte = confusion_matrix(Y_test, Y_test_pred)
 print("Confusion Matrix Testing:\n", cmte)
 
 #%%
-plot_confusion_matrix(knnmodel, X_test, Y_test, labels=[1, 2, 3, 4],
+plot_confusion_matrix(knnmodel, X_test, Y_test, labels=[2, 3, 4],
                       cmap=plt.cm.Blues, values_format='d')
 
 #%% md
@@ -1113,13 +1111,12 @@ plot_confusion_matrix(knnmodel, X_test, Y_test, labels=[1, 2, 3, 4],
 #### 8.3.2 Decision Trees
 #%%
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.datasets import make_classification
-dtree_model = RandomForestClassifier()
+dtree_model = RandomForestClassifier(n_jobs=-1)
 
 from sklearn.model_selection import GridSearchCV
 param_grid = {
     'n_estimators': [50,100,150],
-    'max_depth': [5,6,7,8] #why not more? it is suggested that the best number of splits lie between 5-8
+    'max_depth': [5,6,7,8] # why not more? it is suggested that the best number of splits lie between 5-8
 }
 
 CV_dtree_model = GridSearchCV(estimator=dtree_model, param_grid=param_grid, cv=10)
@@ -1130,10 +1127,7 @@ print(CV_dtree_model.best_params_)
 dtree_model = dtree_model.set_params(**CV_dtree_model.best_params_)
 dtree_model.fit(X_train, Y_train)
 #%%
-# predict training and test data
-Y_train_pred = dtree_model.predict(X_train)
-acctrain = accuracy_score(Y_train, Y_train_pred)
-
+# predict test data
 Y_test_pred = dtree_model.predict(X_test)
 acctest = accuracy_score(Y_test, Y_test_pred)
 
@@ -1142,7 +1136,6 @@ acctest = accuracy_score(Y_test, Y_test_pred)
 report.loc[len(report)] = ['Random Forest Classifier (grid)',
                            CV_dtree_model.cv_results_['mean_test_score'][CV_dtree_model.best_index_],
                            CV_dtree_model.cv_results_['std_test_score'][CV_dtree_model.best_index_],
-                           acctrain,
                            acctest]
 print(report.loc[len(report)-1])
 
@@ -1150,13 +1143,11 @@ print(report.loc[len(report)-1])
 # visualize confusion matrix
 from sklearn.metrics import confusion_matrix, plot_confusion_matrix
 
-cmtr = confusion_matrix(Y_train, Y_train_pred)
-print("Confusion Matrix Training:\n", cmtr)
 cmte = confusion_matrix(Y_test, Y_test_pred)
 print("Confusion Matrix Testing:\n", cmte)
 
 #%%
-plot_confusion_matrix(dtree_model, X_test, Y_test, labels=[1, 2, 3, 4], cmap=plt.cm.Blues, values_format='d')
+plot_confusion_matrix(dtree_model, X_test, Y_test, labels=[2, 3, 4], cmap=plt.cm.Blues, values_format='d')
 #%% md
 
 #### 8.3.3 Neural Networks
@@ -1179,10 +1170,6 @@ nnetmodel = nnetmodel.set_params(**CV_nnetmodel.best_params_)
 nnetmodel.fit(X_train, Y_train)
 
 #%%
-# predict training and test data
-Y_train_pred = nnetmodel.predict(X_train)
-acctrain = accuracy_score(Y_train, Y_train_pred)
-
 Y_test_pred = nnetmodel.predict(X_test)
 acctest = accuracy_score(Y_test, Y_test_pred)
 
@@ -1191,7 +1178,6 @@ acctest = accuracy_score(Y_test, Y_test_pred)
 report.loc[len(report)] = ['Neural Networks (grid)',
                            CV_nnetmodel.cv_results_['mean_test_score'][CV_nnetmodel.best_index_],
                            CV_nnetmodel.cv_results_['std_test_score'][CV_nnetmodel.best_index_],
-                           acctrain,
                            acctest]
 print(report.loc[len(report)-1])
 
@@ -1199,13 +1185,11 @@ print(report.loc[len(report)-1])
 # visualize confusion matrix
 from sklearn.metrics import confusion_matrix, plot_confusion_matrix
 
-cmtr = confusion_matrix(Y_train, Y_train_pred)
-print("Confusion Matrix Training:\n", cmtr)
 cmte = confusion_matrix(Y_test, Y_test_pred)
 print("Confusion Matrix Testing:\n", cmte)
 
 #%%
-plot_confusion_matrix(nnetmodel, X_test, Y_test, labels=[1, 2, 3, 4],
+plot_confusion_matrix(nnetmodel, X_test, Y_test, labels=[2, 3, 4],
                       cmap=plt.cm.Blues, values_format='d')
 
 #%% md
@@ -1213,9 +1197,4 @@ plot_confusion_matrix(nnetmodel, X_test, Y_test, labels=[1, 2, 3, 4],
 ### 8.5 Prediction driving factors
 
 # SHAP diagram
-
-
-
-
-
 
