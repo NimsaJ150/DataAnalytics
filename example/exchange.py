@@ -467,13 +467,6 @@ data_prep = data_ori.copy(deep=True)
 ## 6 Exploratory Data Analysis
 ### 6.1 Univariate Non-Graphical
 
-describe data again
-
-idea: What learnings can be drawn for your own driving behaviour? When is the most dangerous time? What is the most
-what is the most dangerous weather? Which is the most dangerous state? How strong is the correlation between accidents
-and the population density? What are the safest types of crossings? Where is the most dangerous place in the US?
-difference weekday/weekend
-differentiate between corona and pre-corona times; include apple mobility data https://covid19.apple.com/mobility
 
 #%%
 
@@ -491,10 +484,6 @@ data_prep.dtypes
 # describe numerical columns
 data_prep.describe()
 
-#%%
-
-
-
 #%% md
 
 ### 6.2 Univariate Graphical
@@ -502,13 +491,16 @@ data_prep.describe()
 #%%
 
 # histogram of accidents of the biggest cities
-data_prep.City.value_counts()[:20].plot(kind='bar', figsize=(12, 6), color="#173F74")
-plt.xticks(rotation=30)
-plt.ylabel('Number of accidents')
-plt.title("The 20 US-Cities with most accidents.")
-# stacked histogram by year/severity
+
+data_prep.City.value_counts()[:20].plot(kind='bar', figsize=(12,6), color="#173F74")
+plt.xticks(rotation=45, fontsize=15)
+plt.yticks(fontsize=15)
+plt.ylabel('Number of accidents', fontsize=15)
+plt.title("The 20 US-Cities with most accidents.", fontsize=21)
+
 
 #%%
+
 # Prepare data
 x_var = 'Month'
 groupby_var = 'Severity'
@@ -516,20 +508,20 @@ df_agg = data_prep.loc[:, [x_var, groupby_var]].groupby(groupby_var)
 vals = [data_prep[x_var].values.tolist() for i, data_prep in df_agg]
 
 # Draw
-plt.figure(figsize=(16, 9), dpi=80)
-colors = [plt.cm.Spectral(i / float(len(vals))) for i in range(len(vals))]
-n, bins, patches = plt.hist(vals, data_prep[x_var].unique().__len__(), stacked=True, density=False,
-                            color=colors[:len(vals)])
+plt.figure(figsize=(16,9), dpi= 80)
+colors = [plt.cm.cividis(i/float(len(vals))) for i in range(len(vals))]
+n, bins, patches = plt.hist(vals, data_prep[x_var].unique().__len__(), stacked=True, density=False, color=colors[:len(vals)])
 
+#
 # Decoration
-plt.legend({group: col for group, col in zip(np.unique(data_prep[groupby_var]).tolist(), colors[:len(vals)])})
+plt.legend({group:col for group, col in zip(np.unique(data_prep[groupby_var]).tolist(), colors[:len(vals)])}, fontsize=18)
 plt.title(f"Stacked Histogram of ${x_var}$ colored by ${groupby_var}$", fontsize=22)
-plt.xlabel(x_var)
-plt.ylabel("Number of Accidents")
+plt.xlabel(x_var, fontsize=18)
+plt.ylabel("Number of Accidents", fontsize=18)
 # plt.ylim(0, 40)
-month_list = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October',
-              'November', 'December', None]
-plt.xticks(bins, month_list, rotation=90, horizontalalignment='left')
+month_list = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December', None]
+plt.xticks(bins, month_list, rotation=90, horizontalalignment='left', fontsize=18)
+plt.yticks(fontsize=18)
 plt.show()
 
 #%%
@@ -537,21 +529,23 @@ plt.show()
 # Prepare data
 x_var = 'State'
 groupby_var = 'Severity'
+# data_prep.sort_values(by=[x_var])
 df_agg = data_prep.loc[:, [x_var, groupby_var]].groupby(groupby_var)
 vals = [data_prep[x_var].values.tolist() for i, data_prep in df_agg]
 
 # Draw
-plt.figure(figsize=(16, 9), dpi=80)
-colors = [plt.cm.Spectral(i / float(len(vals) - 1)) for i in range(len(vals))]
-n, bins, patches = plt.hist(vals, data_prep[x_var].unique().__len__(), stacked=True, density=False,
-                            color=colors[:len(vals)])
+plt.figure(figsize=(16,9), dpi= 80)
+colors = [plt.cm.cividis(i/float(len(vals)-1)) for i in range(len(vals))]
+n, bins, patches = plt.hist(vals, data_prep[x_var].unique().__len__(), stacked=True, density=False, color=colors[:len(vals)])
+
 
 # Decoration
-plt.legend({group: col for group, col in zip(np.unique(data_prep[groupby_var]).tolist(), colors[:len(vals)])})
+plt.legend({group:col for group, col in zip(np.unique(data_prep[groupby_var]).tolist(), colors[:len(vals)])}, fontsize=18)
 plt.title(f"Stacked Histogram of ${x_var}$ colored by ${groupby_var}$", fontsize=22)
-plt.xlabel(x_var)
-plt.ylabel("Number of Accidents")
-plt.xticks(bins, rotation=90, horizontalalignment='left')
+plt.xlabel(x_var, fontsize=18)
+plt.ylabel("Number of Accidents", fontsize=18)
+plt.xticks(bins, rotation=90, horizontalalignment='left', fontsize=18)
+plt.yticks(fontsize=18)
 plt.show()
 
 #%%
@@ -563,52 +557,94 @@ df_agg = data_prep.loc[:, [x_var, groupby_var]].groupby(groupby_var)
 vals = [data_prep[x_var].values.tolist() for i, data_prep in df_agg]
 
 # Draw
-plt.figure(figsize=(16, 9), dpi=80)
-colors = [plt.cm.Spectral(i / float(len(vals))) for i in range(len(vals))]
-n, bins, patches = plt.hist(vals, data_prep[x_var].unique().__len__(), stacked=True, density=False,
-                            color=colors[:len(vals)])
-print(data_prep[x_var].unique().__len__())
-print(len(bins))
-print(len(patches))
-print(len(vals))
+plt.figure(figsize=(16,9), dpi= 80)
+colors = [plt.cm.cividis(i/float(len(vals))) for i in range(len(vals))]
+n, bins, patches = plt.hist(vals, data_prep[x_var].unique().__len__(), stacked=True, density=False, color=colors[:len(vals)])
 
 # Decoration
-plt.legend({group: col for group, col in zip(np.unique(data_prep[groupby_var]).tolist(), colors[:len(vals)])})
+plt.legend({group:col for group, col in zip(np.unique(data_prep[groupby_var]).tolist(), colors[:len(vals)])}, fontsize=18)
 plt.title(f"Stacked Histogram of ${x_var}$ colored by ${groupby_var}$", fontsize=22)
-plt.xlabel(x_var)
-plt.ylabel("Number of Accidents")
-# plt.ylim(0, 40)
-month_list = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October',
-              'November', 'December', None]
-plt.xticks(bins, rotation=90, horizontalalignment='left')
+plt.xlabel(x_var, fontsize=18)
+plt.ylabel("Number of Accidents", fontsize=18)
+hour_list = ['0 am', '1 am', '2 am', '3 am', '4 am', '5 am', '6 am', '7 am', '8 am', '9 am', '10 am', '11 am',
+            '12 pm', '1 pm', '2 pm', '3 pm', '4 pm', '5 pm', '6 pm', '7 pm', '8 pm', '9 pm', '10 pm', '11 pm', '11:59:59 pm' ]
+plt.xticks(bins, hour_list, rotation=90, horizontalalignment='left', fontsize=18)
+plt.yticks(fontsize=18)
 plt.show()
 
 #%%
 
-# histogram of accidents according to the weather condition (how to standardize?)
-# preferably after feature engineering
-data_prep.Weather_Condition.value_counts()[:15].plot(kind='bar', figsize=(12, 6), color="#173F74")
-plt.xticks(rotation=30)
-plt.ylabel('Number of accidents', color="#173F74")
-plt.title("The 15 most common weather conditions.", color="#173F74")
+# Prepare data
+x_var = 'Weekday'
+groupby_var = 'Severity'
+df_agg = data_prep.loc[:, [x_var, groupby_var]].groupby(groupby_var)
+vals = [data_prep[x_var].values.tolist() for i, data_prep in df_agg]
+
+# Draw
+plt.figure(figsize=(16,9), dpi= 80)
+colors = [plt.cm.cividis(i/float(len(vals))) for i in range(len(vals))]
+n, bins, patches = plt.hist(vals, data_prep[x_var].unique().__len__(), stacked=True, density=False, color=colors[:len(vals)])
+
+# Decoration
+plt.legend({group:col for group, col in zip(np.unique(data_prep[groupby_var]).tolist(), colors[:len(vals)])}, fontsize=18)
+plt.title(f"Stacked Histogram of ${x_var}$ colored by ${groupby_var}$", fontsize=22)
+plt.xlabel(x_var, fontsize=18)
+plt.ylabel("Number of Accidents", fontsize=18)
+weekday_list = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday", None ]
+plt.xticks(bins, weekday_list, rotation=90, horizontalalignment='left', fontsize=18)
+plt.yticks(fontsize=18)
+plt.show()
+
+#%%
+
+# histogram of accidents according to the weather condition
+
+data_prep.Weather_Condition.value_counts()[:15].plot(kind='bar', figsize=(12,6), color="#173F74")
+plt.xticks(rotation=45, fontsize=14)
+plt.yticks(fontsize=14)
+plt.ylabel('Number of accidents', color="#173F74", fontsize=14)
+plt.title("The 15 most common weather conditions.", color="#173F74", fontsize=21 )
 plt.show()
 
 #%%
 
 # ggplot with the development of accidents over time
+
 plt.style.use('ggplot')
-fig, ax = plt.subplots(figsize=(18, 18))
-data_prep.groupby(['Year', 'Week', 'Severity']).count()['ID'].unstack().plot(ax=ax, cmap="cividis")  #
-ax.set_xlabel('Week', color="#173F74")
-ax.set_ylabel('Number of Accidents', color="#173F74")
-ax.set_title("Development of accidents over time distinguished by the severity")
+fig, ax = plt.subplots(figsize=(16,9))
+data_prep.groupby(['Year','Week','Severity']).count()["City"].unstack().plot(ax=ax, cmap="cividis")
+ax.set_xlabel('Time (Year, Week)', color="#173F74", fontsize=18)
+ax.set_ylabel('Number of Accidents', color="#173F74", fontsize=18)
+
+ax.set_title("Development of accidents per week distinguished by the severity", fontsize=22)
+ax.legend(fontsize=14)
+
+# labels = [item.get_text() for item in ax.get_xticklabels()]
+# labels[1] = 'Testing'
+# ax.set_xticklabels(labels)
+#start, end = (2016, 1), (2020, 52)
+#ax.xaxis.set_ticks(np.arange(start, end, 26))
+#ax.set_xticklabels(["2016 H1", "2016 H2","2017 H1", "2017 H2","2018 H1", "2018 H2","2019 H1", "2019 H2","2020 H1", "2020 H2", "2021"])
+plt.show()
+
+#%%
+
+#graph of number of accidents per state to show backlog
+
+plt.style.use('ggplot')
+fig, ax = plt.subplots(figsize=(16,9))
+data_prep.groupby(['Year','Month','State']).count()['City'].unstack().plot(ax=ax, cmap="jet")  #
+ax.set_xlabel('Time (Year, Month)', color="#173F74", fontsize=18)
+ax.set_ylabel('Number of Accidents', color="#173F74", fontsize=18)
+ax.set_title("Development of accidents per week distinguished by the state", fontsize=22)
+ax.legend(loc='center right', bbox_to_anchor=(1.1, 0.5), ncol=2)
 plt.show()
 
 #%%
 
 # histogram of accidents according to time of day
 hours = [hour for hour, df in data_prep.groupby('Hour')]
-plt.plot(hours, data_prep.groupby(['Hour'])['ID'].count(), color="#173F74")
+plt.plot(hours, data_prep.groupby(['Hour'])['City'].count(), color="#173F74")
 plt.xticks(hours)
 plt.xlabel('Hour', color="#173F74")
 plt.ylabel('Number of accidents', color="#173F74")
@@ -619,7 +655,7 @@ plt.show()
 
 # histogram of accidents according to day of the week
 days = [day for day, df in data_prep.groupby('Weekday')]
-plt.plot(days, data_prep.groupby(['Weekday'])['ID'].count(), color="#173F74")
+plt.plot(days, data_prep.groupby(['Weekday'])['City'].count(), color="#173F74")
 plt.xticks(days, ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"], rotation=30)
 plt.xlabel('Weekday')
 plt.ylabel('Number of accidents')
@@ -628,18 +664,26 @@ plt.show()
 #%%
 
 # histogram of accidents filtered by state
-data_prep.State.value_counts().plot(kind='bar', figsize=(12, 6), color="#173F74")
+plt.title("The US States ordered by the number of accidents")
 plt.xticks(rotation=30)
 plt.ylabel('Number of accidents')
-plt.title("The US States ordered by the number of accidents")
+data_prep.State.value_counts().plot(kind='bar', figsize=(12, 6), color="#173F74")
+plt.show()
 
 #%%
 
 # pie diagram on severity
-data_prep.Severity.value_counts().plot.pie(cmap="cividis")
-plt.title("Share of the different severity levels")
-plt.legend()
-
+fig = plt.figure(figsize=[10, 10])
+ax = fig.add_subplot(111)
+cmap = plt.cm.cividis
+colors = cmap(np.linspace(0., 1., 4))
+sizes = data_prep['Severity'].value_counts().sort_index() / data_prep['Severity'].value_counts().sum() * 100
+ax.pie(sizes, labels=sizes.index,
+        autopct='%1.1f%%', shadow=False, startangle=90, colors=colors,textprops={'fontsize': 14})
+# data_prep.Severity.value_counts().plot.pie(cmap="cividis")
+ax.set_title("Share of the different severity levels", fontsize=20)
+ax.legend(fontsize=14)
+plt.show()
 
 #%% md
 
@@ -655,67 +699,384 @@ data_prep.corr()
 ### 6.4 Multivariate Graphical
 
 #%%
+# Correlogram
 
-# to be adjusted:
 fig = plt.gcf()
-fig.set_size_inches(16, 12)
-fig = sns.heatmap(data_prep.corr(), annot=True, linewidths=1, linecolor='k', square=True, mask=False,
+fig.set_size_inches(16, 9)
+fig = sns.heatmap(data_prep.corr(), annot=False, linewidths=1, linecolor='k', square=True, mask=False,
                   vmin=-1, vmax=1, cbar_kws={"orientation": "vertical"}, cbar=True, cmap="cividis")
 sns.set(style='ticks')
-plt.title("Correlogram of all features")
+plt.title("Correlogram of all features", fontsize=20)
 
 #%%
 
-# to be adjusted:
-# US map simple: scatterplot based on latitude and longitude data, with correct alpha, to show densitiy
-plt.figure(figsize=(15, 9))
-sns.scatterplot(x="Start_Lng", y="Start_Lat", data=data_prep, hue="Severity", legend="auto",
-                s=15, palette="cividis", alpha=0.3)
-plt.title("Location of all accidents in the USA in the time from 2016 to 2020, distinguished by severtiy")
+# US map simple: scatterplot based on latitude and longitude data
+
+plt.figure(figsize = (15,9))
+sns.scatterplot(x="Start_Lng", y="Start_Lat", data=data_prep, hue ="Severity", legend ="auto",
+                s=2, palette="cividis", alpha=0.5)
+plt.title("Location of all accidents in the USA in the time from 2016 to 2020, distinguished by severity")
 plt.show()
 
 #%%
 
 state_list = data_prep["State"].unique()
 sorted_state_list = sorted(state_list)
-plt.figure(figsize=(16, 9))
-g = sns.scatterplot(x="Start_Lng", y="Start_Lat", data=data_prep, hue="State", hue_order=sorted_state_list,
-                    legend="auto", s=15, palette="cividis", alpha=0.3)
+plt.figure(figsize = (16,9))
+g = sns.scatterplot(x="Start_Lng", y="Start_Lat", data=data_prep, hue = "State", hue_order=sorted_state_list,
+                legend = "auto", s=3, palette="cividis", alpha=0.3)
 g.legend(loc='center right', bbox_to_anchor=(1.1, 0.5), ncol=2)
 plt.title("Location of all accidents in the USA in the time from 2016 to 2020, distinguished by State")
 plt.show()
+
+
+#%%
+"""
+import pandas as pd     #(version 1.0.0)
+import plotly           #(version 4.5.0)
+import plotly.express as px
+import plotly.io as pio
+
+#the_years = ["2016","2017", "2018", "2019", "2020", "2021"]
+
+df = data_prep.groupby(["Year","Week","Severity"], as_index=False)
+# data_prep.groupby(['Year','Week','Severity']).count()["City"].unstack()
+
+#world=["Arab World","South Asia","Latin America & Caribbean","East Asia & Pacific","European Union"]
+#world_xrange=[4,19]
+
+# asia_latin_years = ["2000","2001","2002","2003","2004","2005","2006","2007","2008","2009","2010","2011","2012","2013","2014","2015","2016","2017"]
+
+# europe=["Bulgaria","Romania","Denmark","France","Hungary"]
+# africa=["Malawi","Egypt, Arab Rep.","Mauritania","Morocco","Lesotho"]
+# arab=["Jordan","Oman","Qatar","Tunisia","Syrian Arab Republic"]
+# asia_central=["India","Iran, Islamic Rep.","Mongolia","Tajikistan","Uzbekistan"]
+# latin_caribb=["El Salvador","Mexico","Argentina","Cuba","Chile"]
+
+# europe_xrange=[10,20]
+# africa_xrange=[2,15]
+# arab_xrange=[6,17]
+# asia_central_xrange=[6,16]
+# latin_caribb_xrange=[10,19]
+
+# ------------------------------------------------------------------------------
+# Choose dataframe Region and sort column
+#df = df[df['Country Name'].isin(world)]
+#df['Country Name'] = pd.Categorical(df['Country Name'], ['South Asia','Arab World','East Asia & Pacific',
+#                                                         'Latin America & Caribbean',"European Union"])
+#df.sort_values("Country Name", inplace=True)
+
+#df = pd.melt(df,id_vars=['Country Name','Country Code','Indicator Name'],var_name='Year',value_name='Rate')
+# print(df[:20])
+
+# ------------------------------------------------------------------------------
+# Build the dot plot (variation of scatter plot)
+fig = px.scatter(data_prep, x="Start_Lng", y="Start_Lat", animation_frame="Year",
+                 title="Location of all accidents in the USA in the time from 2016 to 2020")
+#labels={"Rate":"Years a child is expected to spend at school/university", "Indicator Name":"Gender"}
+fig.update_layout(title={'x':0.5,'xanchor':'center','font':{'size':20}},
+                  xaxis=dict(title=dict(font=dict(size=20))),
+                  yaxis={'title':{'text':None}},
+                  legend={'font':{'size':18},'title':{'font':{'size':18}}})
+
+# print(fig.layout)
+# print(fig.data)
+# print(fig.frames)
+
+fig.layout.updatemenus[0].buttons[0].args[1]['frame']['duration'] = 800
+fig.layout.updatemenus[0].buttons[0].args[1]['transition']['duration'] = 800
+#fig.data[0].name = 'Girl'
+#fig.data[1].name = 'Boy'
+#fig.data[0]['marker'].update(size=14)
+#fig.data[1]['marker'].update(size=14)
+#fig.data[0]['marker'].update(color='#22bc22')
+#fig.data[1]['marker'].update(color="#fda026")
+
+#for x in fig.frames:
+#    x.data[0]['marker']['color'] = '#22bc22'
+#    x.data[1]['marker']['color'] = '#fda026'
+
+pio.show(fig)
+"""
 #%%
 
-# ideas: A MAP of the US, showing the accident intensity for each place by colour
-# https://runestone.academy/runestone/books/published/httlads/WorldFacts/cs1_graphing_infant_mortality.html
-#%%
-#@luke !!! TO DO
-#graph of number of accidents per state to show backlog
+#import plotly.express as px
+#fig = px.scatter(data_prep, x="Start_Lng", y="Start_Lat", color="Year", facet_col="Severity", facet_row="Nautical_Twilight")
+#fig.show()
 
 #%% md
 
 ### 6.5 Comparison of 2019 with 2020
-- Dumbbell plot https://www.machinelearningplus.com/plots/top-50-matplotlib-visualizations-the-master-plots-python
 
-#### 6.5.1 Preparation
+
+#### 6.5.1 Preparation Part 1
+
 #%%
+
 data_prep_wo_bias = data_prep.copy(deep=True)
 
-#dropping states which cause backlog
-#@luke - check if in fact these are the right states !!!!!
+#dropping states which cause huge bias
+
 data_prep_wo_bias = data_prep_wo_bias[data_prep_wo_bias['State'] != 'CA']
 data_prep_wo_bias = data_prep_wo_bias[data_prep_wo_bias['State'] != 'FL']
 
-#%%
-data_prep_wo_bias_2020 = data_prep_wo_bias[data_prep_wo_bias.Year == 2020]
-data_prep_wo_bias_2019 = data_prep_wo_bias[data_prep_wo_bias.Year == 2019]
+
 #%% md
 
-#### 6.5.2 Comparison
-- Dumbbell plot https://www.machinelearningplus.com/plots/top-50-matplotlib-visualizations-the-master-plots-python
+#### 6.5.2
+#%%
+
+#graph of number of accidents per state to show backlog
+plt.style.use('ggplot')
+fig, ax = plt.subplots(figsize=(18,8))
+data_prep_wo_bias.groupby(['Year','Week','State']).count()['City'].unstack().plot(ax=ax, cmap="jet")  #
+ax.set_xlabel('Month', color="#173F74", fontsize=14)
+ax.set_ylabel('Number of Accidents', color="#173F74", fontsize=14)
+ax.set_title("Development of accidents per week distinguished by the severity", fontsize=14)
+ax.legend(loc='center right', bbox_to_anchor=(1.1, 0.5), ncol=2)
+plt.show()
 
 #%%
 
+#graph of number of accidents of severity 1 to show that it mainly depends on a short time period
+
+data_prep_sev_1 = data_prep[data_prep.Severity==1]
+
+plt.style.use('ggplot')
+fig, ax = plt.subplots(figsize=(18,8))
+data_prep_sev_1.groupby(['Year','Month','State']).count()['City'].unstack().plot(ax=ax, cmap="cividis")
+
+ax.set_xlabel('Week', color="#173F74", fontsize=14)
+ax.set_ylabel('Number of Accidents', color="#173F74", fontsize=14)
+ax.set_title("Development of severity level 1 accidents per week distinguished by the state", fontsize=20, color="#173F74")
+ax.legend(loc='center right', bbox_to_anchor=(1.12, 0.5), ncol=2)
+plt.show()
+
+#%%
+
+#graph of number of accidents of severity 1 to show that it mainly depends on a short time period
+
+data_prep_sev_2 = data_prep[data_prep.Severity==2]
+
+plt.style.use('ggplot')
+fig, ax = plt.subplots(figsize=(18,8))
+
+data_prep_sev_2.groupby(['Year','Month','State']).count()['City'].unstack().plot(ax=ax, cmap="cividis")
+
+
+ax.set_xlabel('Week', color="#173F74", fontsize=14)
+ax.set_ylabel('Number of Accidents', color="#173F74", fontsize=14)
+ax.set_title("Development of severity level 2 accidents per week distinguished by the state", fontsize=20, color="#173F74")
+ax.legend(loc='center right', bbox_to_anchor=(1.12, 0.5), ncol=2)
+plt.show()
+
+#%% md
+
+#### 6.5.3 Preparation Part 2
+###### Splitting into first half of 2019 and first half of 2020
+
+#%%
+
+data_prep_wo_bias_2020 = data_prep_wo_bias[data_prep_wo_bias.Year == 2020]
+data_prep_wo_bias_2020_h1 = data_prep_wo_bias_2020[data_prep_wo_bias_2020.Week <=26]
+
+data_prep_wo_bias_2019 = data_prep_wo_bias[data_prep_wo_bias.Year == 2019]
+data_prep_wo_bias_2019_h1_ = data_prep_wo_bias_2019[data_prep_wo_bias_2019.Week <=26]
+data_prep_wo_bias_2019_h1 = data_prep_wo_bias_2019_h1_[data_prep_wo_bias_2019_h1_.Month <= 6]
+# needed to exclude last days of 2019 who are counted towards the first week of the new year
+
+#%% md
+
+#### 6.5.4 Rerun the existing graphs with the reduced data set
+
+#%%
+# Stacked histogram of Hour colored by Severity in 2019 H1
+
+# Prepare data
+x_var = 'Hour'
+groupby_var = 'Severity'
+df_agg = data_prep_wo_bias_2019_h1.loc[:, [x_var, groupby_var]].groupby(groupby_var)
+vals = [data_prep_wo_bias_2019_h1[x_var].values.tolist() for i, data_prep_wo_bias_2019_h1 in df_agg]
+
+# Draw
+plt.figure(figsize=(16,9), dpi= 80)
+colors = [plt.cm.cividis(i/float(len(vals))) for i in range(len(vals))]
+n, bins, patches = plt.hist(vals, data_prep_wo_bias_2019_h1[x_var].unique().__len__(), stacked=True, density=False, color=colors[:len(vals)])
+
+# Decoration
+plt.legend({group:col for group, col in zip(np.unique(data_prep_wo_bias_2019_h1[groupby_var]).tolist(), colors[:len(vals)])}, fontsize=18)
+plt.title(f"Stacked Histogram of ${x_var}$ colored by ${groupby_var}$ in 2019 H1", fontsize=22)
+plt.xlabel(x_var, fontsize=18)
+plt.ylabel("Number of Accidents", fontsize=18)
+hour_list = ['0 am', '1 am', '2 am', '3 am', '4 am', '5 am', '6 am', '7 am', '8 am', '9 am', '10 am', '11 am',
+            '12 pm', '1 pm', '2 pm', '3 pm', '4 pm', '5 pm', '6 pm', '7 pm', '8 pm', '9 pm', '10 pm', '11 pm', '11:59:59 pm' ]
+plt.xticks(bins, hour_list, rotation=90, horizontalalignment='left', fontsize=18)
+plt.yticks(fontsize=18)
+plt.show()
+
+#%%
+# Stacked histogram of Hour colored by Severity in 2020 H1
+
+# Prepare data
+x_var = 'Hour'
+groupby_var = 'Severity'
+df_agg = data_prep_wo_bias_2020_h1.loc[:, [x_var, groupby_var]].groupby(groupby_var)
+vals = [data_prep_wo_bias_2020_h1[x_var].values.tolist() for i, data_prep_wo_bias_2020_h1 in df_agg]
+
+# Draw
+plt.figure(figsize=(16,9), dpi= 80)
+colors = [plt.cm.cividis(i/float(len(vals))) for i in range(len(vals))]
+n, bins, patches = plt.hist(vals, data_prep_wo_bias_2020_h1[x_var].unique().__len__(), stacked=True, density=False, color=colors[:len(vals)])
+
+# Decoration
+plt.legend({group:col for group, col in zip(np.unique(data_prep_wo_bias_2020_h1[groupby_var]).tolist(), colors[:len(vals)])}, fontsize=18)
+plt.title(f"Stacked Histogram of ${x_var}$ colored by ${groupby_var}$ in 2020 H1", fontsize=22)
+plt.xlabel(x_var, fontsize=18)
+plt.ylabel("Number of Accidents", fontsize=18)
+hour_list = ['0 am', '1 am', '2 am', '3 am', '4 am', '5 am', '6 am', '7 am', '8 am', '9 am', '10 am', '11 am',
+            '12 pm', '1 pm', '2 pm', '3 pm', '4 pm', '5 pm', '6 pm', '7 pm', '8 pm', '9 pm', '10 pm', '11 pm', '11:59:59 pm' ]
+plt.xticks(bins, hour_list, rotation=90, horizontalalignment='left', fontsize=18)
+plt.yticks(fontsize=18)
+plt.show()
+
+#%%
+# Stacked histogram of Weekday colored by Severity in 2019 H1
+# Prepare data
+x_var = 'Weekday'
+groupby_var = 'Severity'
+df_agg = data_prep_wo_bias_2019_h1.loc[:, [x_var, groupby_var]].groupby(groupby_var)
+vals = [data_prep_wo_bias_2019_h1[x_var].values.tolist() for i, data_prep_wo_bias_2019_h1 in df_agg]
+
+# Draw
+plt.figure(figsize=(16,9), dpi= 80)
+colors = [plt.cm.cividis(i/float(len(vals))) for i in range(len(vals))]
+n, bins, patches = plt.hist(vals, data_prep_wo_bias_2019_h1[x_var].unique().__len__(), stacked=True, density=False, color=colors[:len(vals)])
+
+# Decoration
+plt.legend({group:col for group, col in zip(np.unique(data_prep_wo_bias_2019_h1[groupby_var]).tolist(), colors[:len(vals)])}, fontsize=18)
+plt.title(f"Stacked Histogram of ${x_var}$ colored by ${groupby_var}$ in 2019 H1", fontsize=22)
+plt.xlabel(x_var, fontsize=18)
+plt.ylabel("Number of Accidents", fontsize=18)
+weekday_list = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday", None ]
+plt.xticks(bins, weekday_list, rotation=90, horizontalalignment='left', fontsize=18)
+plt.yticks(fontsize=18)
+plt.show()
+
+#%%
+# Stacked histogram of Weekday colored by Severity in 2020 H1
+
+# Prepare data
+x_var = 'Weekday'
+groupby_var = 'Severity'
+df_agg = data_prep_wo_bias_2020_h1.loc[:, [x_var, groupby_var]].groupby(groupby_var)
+vals = [data_prep_wo_bias_2020_h1[x_var].values.tolist() for i, data_prep_wo_bias_2020_h1 in df_agg]
+
+# Draw
+plt.figure(figsize=(16,9), dpi= 80)
+colors = [plt.cm.cividis(i/float(len(vals))) for i in range(len(vals))]
+n, bins, patches = plt.hist(vals, data_prep_wo_bias_2020_h1[x_var].unique().__len__(), stacked=True, density=False, color=colors[:len(vals)])
+
+# Decoration
+plt.legend({group:col for group, col in zip(np.unique(data_prep_wo_bias_2020_h1[groupby_var]).tolist(), colors[:len(vals)])}, fontsize=18)
+plt.title(f"Stacked Histogram of ${x_var}$ colored by ${groupby_var}$ in 2020 H1", fontsize=22)
+plt.xlabel(x_var, fontsize=18)
+plt.ylabel("Number of Accidents", fontsize=18)
+weekday_list = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday", None ]
+plt.xticks(bins, weekday_list, rotation=90, horizontalalignment='left', fontsize=18)
+plt.yticks(fontsize=18)
+plt.show()
+
+#%%
+
+# US map: scatterplot based on latitude and longitude data for 2019 H1
+
+plt.figure(figsize = (16,9))
+sns.scatterplot(x="Start_Lng", y="Start_Lat", data=data_prep_wo_bias_2019_h1, hue ="Severity", legend ="auto",
+                s=2, palette="cividis", alpha=0.7)
+plt.title("Location of all accidents in the USA in the first half of 2019, distinguished by severity")
+plt.show()
+
+#%%
+
+# US map: scatterplot based on latitude and longitude data for 2020 H1
+
+plt.figure(figsize = (16,9))
+sns.scatterplot(x="Start_Lng", y="Start_Lat", data=data_prep_wo_bias_2020_h1, hue ="Severity", legend ="auto",
+                s=2, palette="cividis", alpha=0.7)
+plt.title("Location of all accidents in the USA in the first half of 2020, distinguished by severity")
+plt.show()
+
+#%%
+# Stacked histogram of Week colored by Severity in 2019 H1
+
+# Prepare data
+x_var = 'Week'
+groupby_var = 'Severity'
+df_agg = data_prep_wo_bias_2020_h1.loc[:, [x_var, groupby_var]].groupby(groupby_var)
+vals = [data_prep_wo_bias_2020_h1[x_var].values.tolist() for i, data_prep_wo_bias_2020_h1 in df_agg]
+
+# Draw
+plt.figure(figsize=(16,9), dpi= 80)
+colors = [plt.cm.cividis(i/float(len(vals))) for i in range(len(vals))]
+n, bins, patches = plt.hist(vals, data_prep_wo_bias_2020_h1[x_var].unique().__len__(), stacked=True, density=False, color=colors[:len(vals)])
+
+#
+# Decoration
+plt.legend({group:col for group, col in zip(np.unique(data_prep_wo_bias_2020_h1[groupby_var]).tolist(), colors[:len(vals)])}, fontsize=18)
+plt.title(f"Stacked Histogram of ${x_var}$ colored by ${groupby_var}$ in 2020", fontsize=22)
+plt.xlabel(x_var, fontsize=18)
+plt.ylabel("Number of Accidents", fontsize=18)
+# plt.ylim(0, 40)
+#week_list = list(range(bins))
+plt.xticks(rotation=0, horizontalalignment='right', fontsize=18)
+plt.yticks(fontsize=18)
+plt.show()
+
+#%%
+
+# Stacked histogram of Week colored by Severity in 2020 H1
+
+# Prepare data
+x_var = 'Week'
+groupby_var = 'Severity'
+df_agg = data_prep_wo_bias_2019_h1.loc[:, [x_var, groupby_var]].groupby(groupby_var)
+vals = [data_prep_wo_bias_2019_h1[x_var].values.tolist() for i, data_prep_wo_bias_2019_h1 in df_agg]
+
+# Draw
+plt.figure(figsize=(16,9), dpi= 80)
+colors = [plt.cm.cividis(i/float(len(vals))) for i in range(len(vals))]
+n, bins, patches = plt.hist(vals, data_prep_wo_bias_2019_h1[x_var].unique().__len__(), stacked=True, density=False, color=colors[:len(vals)])
+
+#
+# Decoration
+plt.legend({group:col for group, col in zip(np.unique(data_prep_wo_bias_2019_h1[groupby_var]).tolist(), colors[:len(vals)])}, fontsize=18)
+plt.title(f"Stacked Histogram of ${x_var}$ colored by ${groupby_var}$ in 2019", fontsize=22)
+plt.xlabel(x_var, fontsize=18)
+plt.ylabel("Number of Accidents", fontsize=18)
+# plt.ylim(0, 40)
+#month_list = ['January', 'February', 'March', 'April', 'May', 'June', None]
+#plt.xticks(bins, month_list, rotation=90, horizontalalignment='left', fontsize=18)
+plt.yticks(fontsize=18)
+plt.show()
+
+#%%
+
+#graph of number of accidents per state to show backlog
+
+plt.style.use('ggplot')
+fig, ax = plt.subplots(figsize=(18,8))
+data_prep_wo_bias_2019_h1.groupby(['Year','Week','Severity']).count()['City'].unstack().plot(ax=ax, cmap="cividis")
+data_prep_wo_bias_2020_h1.groupby(['Year','Week','Severity']).count()['City'].unstack().plot(ax=ax, cmap="cividis",
+                                                                                             linestyle="dashed")
+week_list = list(range(26))
+week_list_ = list(range(1,27,1))
+ax.set_xticks(week_list)
+ax.set_xticklabels(week_list_)
+ax.set_xlabel('Week', color="#173F74", fontsize=18)
+ax.set_ylabel('Number of Accidents', color="#173F74", fontsize=18)
+ax.set_title("Development of accidents per week distinguished by the severity", fontsize=22)
+ax.legend(loc='center right', bbox_to_anchor=(1.12, 0.5), ncol=2, title="2019         2020")
+plt.show()
 
 
 #%% md
