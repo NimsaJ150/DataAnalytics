@@ -502,7 +502,7 @@ data_prep.describe()
 #%%
 
 # histogram of accidents of the biggest cities
-data_prep.City.value_counts()[:20].plot(kind='bar', figsize=(12,6), color="#173F74")
+data_prep.City.value_counts()[:20].plot(kind='bar', figsize=(12, 6), color="#173F74")
 plt.xticks(rotation=30)
 plt.ylabel('Number of accidents')
 plt.title("The 20 US-Cities with most accidents.")
@@ -911,19 +911,18 @@ def replace(value, split_value, split_index):
 for column in data_one_hot:
     replace(column, column, 0)
 
-
 data_encoding.drop('Weather_Condition', axis=1, inplace=True)
 #%% md
 
 #### 7.1.5 Frequency encoding
-For Street, City, County
+For County
 
 #%%
 county_dict = data_encoding['County'].value_counts().to_dict()
 
 #%%
 # Ordinal Freq Encoding
-county_array = county_dict.keys() #keys from the dict are now arranged in descending order in the array. Most frequent -> least
+county_array = county_dict.keys()  # keys from the dict are now arranged in descending order in the array. Most frequent -> least
 
 county_encoder = OrdinalEncoder(categories=county_array)
 data_encoding[['County']] = ordinal_encoder.fit_transform(data_encoding[['County']])
@@ -962,7 +961,7 @@ data_independent.head()
 #%%
 # to scale each column so that every feature/parameter has equal weight
 
-x = data_independent.values # returns a numpy array with all the values of the dataframe
+x = data_independent.values  # returns a numpy array with all the values of the dataframe
 min_max_scaler = MinMaxScaler()
 x_scaled = min_max_scaler.fit_transform(x)
 # data_independent = pd.DataFrame(x_scaled)
@@ -1003,7 +1002,7 @@ severity_values = Y_train['Severity'].value_counts()
 severity_values
 #%%
 # ensuring every severity level has equal proportions in the data
-def balanced_subsample(y, size=None, random_state=None): # returns a List with randomly chosen row numbers
+def balanced_subsample(y, size=None, random_state=None):  # returns a List with randomly chosen row numbers
     subsample = []
     if size is None:
         n_smp = y.value_counts().min()
@@ -1020,6 +1019,7 @@ def balanced_subsample(y, size=None, random_state=None): # returns a List with r
         subsample += samples[indexes].tolist()
 
     return subsample
+
 
 rows = balanced_subsample(data_tbsampled['severity'], size=20000, random_state=0)
 #%%
@@ -1042,6 +1042,7 @@ data_test_tbsampled.reset_index(inplace=True, drop=True)
 
 #%%
 from sklearn.utils import resample
+
 data_test_sampled = resample(data_test_tbsampled, replace=False, n_samples=2000, random_state=0)
 
 #%%
@@ -1060,7 +1061,7 @@ hybrid K-means and random forest https://link.springer.com/content/pdf/10.1007/s
 OCT https://towardsdatascience.com/using-machine-learning-to-predict-car-accidents-44664c79c942
 Regression-kriging https://carto.com/blog/predicting-traffic-accident-hotspots-with-spatial-data-science/
 #%%
-report = pd.DataFrame(columns=['Model','Mean Acc. Training','Standard Deviation', 'Acc. Test'])
+report = pd.DataFrame(columns=['Model', 'Mean Acc. Training', 'Standard Deviation', 'Acc. Test'])
 
 
 #%% md
@@ -1068,11 +1069,13 @@ report = pd.DataFrame(columns=['Model','Mean Acc. Training','Standard Deviation'
 #### 8.3.1 KNN
 #%%
 from sklearn.neighbors import KNeighborsClassifier
+
 knnmodel = KNeighborsClassifier(n_jobs=-1)
 
 from sklearn.model_selection import GridSearchCV
+
 param_grid = {
-    'n_neighbors': [ 3, 4, 5]
+    'n_neighbors': [3, 4, 5]
 }
 
 CV_knnmodel = GridSearchCV(estimator=knnmodel, param_grid=param_grid, cv=10)
@@ -1093,7 +1096,7 @@ report.loc[len(report)] = ['k-NN (grid)',
                            CV_knnmodel.cv_results_['mean_test_score'][CV_knnmodel.best_index_],
                            CV_knnmodel.cv_results_['std_test_score'][CV_knnmodel.best_index_],
                            acctest]
-print(report.loc[len(report)-1])
+print(report.loc[len(report) - 1])
 
 #%%
 # visualize confusion matrix
@@ -1111,12 +1114,14 @@ plot_confusion_matrix(knnmodel, X_test, Y_test, labels=[2, 3, 4],
 #### 8.3.2 Decision Trees
 #%%
 from sklearn.ensemble import RandomForestClassifier
+
 dtree_model = RandomForestClassifier(n_jobs=-1)
 
 from sklearn.model_selection import GridSearchCV
+
 param_grid = {
-    'n_estimators': [50,100,150],
-    'max_depth': [5,6,7,8] # why not more? it is suggested that the best number of splits lie between 5-8
+    'n_estimators': [50, 100, 150],
+    'max_depth': [5, 6, 7, 8]  # why not more? it is suggested that the best number of splits lie between 5-8
 }
 
 CV_dtree_model = GridSearchCV(estimator=dtree_model, param_grid=param_grid, cv=10)
@@ -1137,7 +1142,7 @@ report.loc[len(report)] = ['Random Forest Classifier (grid)',
                            CV_dtree_model.cv_results_['mean_test_score'][CV_dtree_model.best_index_],
                            CV_dtree_model.cv_results_['std_test_score'][CV_dtree_model.best_index_],
                            acctest]
-print(report.loc[len(report)-1])
+print(report.loc[len(report) - 1])
 
 #%%
 # visualize confusion matrix
@@ -1153,9 +1158,11 @@ plot_confusion_matrix(dtree_model, X_test, Y_test, labels=[2, 3, 4], cmap=plt.cm
 #### 8.3.3 Neural Networks
 #%%
 from sklearn.neural_network import MLPClassifier
+
 nnetmodel = MLPClassifier(max_iter=400)
 
 from sklearn.model_selection import GridSearchCV
+
 param_grid = {
     'hidden_layer_sizes': [(3,), (5,), (9,)],
     'activation': ['logistic', 'tanh', 'relu']
@@ -1179,7 +1186,7 @@ report.loc[len(report)] = ['Neural Networks (grid)',
                            CV_nnetmodel.cv_results_['mean_test_score'][CV_nnetmodel.best_index_],
                            CV_nnetmodel.cv_results_['std_test_score'][CV_nnetmodel.best_index_],
                            acctest]
-print(report.loc[len(report)-1])
+print(report.loc[len(report) - 1])
 
 #%%
 # visualize confusion matrix
