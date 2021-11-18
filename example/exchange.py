@@ -1,12 +1,13 @@
 #%% md
 
 # Data Analysis Project
+This is a countrywide car accident dataset, which covers 49 states of the USA. The accident data are collected from February 2016 to December 2020, using multiple APIs that provide streaming traffic incident (or event) data. These APIs broadcast traffic data captured by a variety of entities, such as the US and state departments of transportation, law enforcement agencies, traffic cameras, and traffic sensors within the road-networks.
 
-Traffic accidents in the US from Feb 2016 – Dec 2020 from https://smoosavi.org/datasets/us_accidents
+Link to dataset (Version 8) from https://www.kaggle.com/sobhanmoosavi/us-accidents/version/8
 
 Motivation:
 1. Are there changes in accidents between the first half of 2019 and of 2020? Are the number of accidents affected by Covid-19?
-2. What factors affect the severity of an accident?
+2. What factors affect the number/severity of an accident? Can severity be predicted?
 
 ---
 ## 1 Imports
@@ -40,23 +41,6 @@ file_path = './US_Accidents_Dec20.csv'
 # If file exists
 if os.path.isfile(file_path):
     data_ori = pd.read_csv(file_path)
-else:
-    # TODO: insert code to download file
-    pass
-"""
-if not os.path.exists(filename):
-    display("Reading from URL..")
-    df_amz = pd.read_json("https://www.dropbox.com/s/o9jxaeax4mascd3/Electronics_5.json?dl=1", lines = True)
-    if not os.path.exists(PATH_DATA):
-        os.mkdir(PATH_DATA)
-    df_amz.to_pickle(filename)
-
-else:
-    display("Reading from hard drive..")
-    df_amz = pd.read_pickle(filename)
-
-df_amz.head()
-"""
 
 #%% md
 
@@ -251,12 +235,13 @@ data_ori.describe()
 #%% md
 
 ---
-## 5 Data Cleaning
+## 4 Data Cleaning
 
-### 5.1 Drop columns
+### 4.1 Drop columns
 Dropping irrelevant columns.
 
 Reasons:
+
 - End_Lat, End_Lng - Shows end position of car crash. Full of NaNs.
 
 - Country - Since it is all happening in the US, this is an insignificant column.
@@ -267,7 +252,7 @@ Reasons:
 
 - Description - contains unstructured text data (with typos) which contains information such as address/ zipcode which
 are already present in the data set. Other information in this column such as exact names, details of those involved
-etc are unimportant for our current project.
+etc. are unimportant for our current project.
 
 - Number, Precipitation - too many NaN values, others mostly 0. Weather data already included in another column.
 
@@ -277,15 +262,15 @@ etc are unimportant for our current project.
 
 - Airport_Code - Location of accident already included in data set. Airport code unimportant.
 
-- Weather_Timestamp - shows us exact time of weather measurement which all match day of accident. Unimportant for now.
+- Weather_Timestamp - shows us exact time of weather measurement which all match day of accident.
 
 - Wind_Chill(F) - We already have weather data. Wind chill is calculated using temperature and wind speed which we
 already have in dataset. Affect of wind on skin is unimportant for accident rates.
 
 - End_Time - End time in this dataset is just Start_time + 6 hours. Doesn't have any significant meaning.
 
-- Sunrise_Sunset, Civil_Twilight, Astronomical_Twilight - to avoid spurious correlatons. Nautical Twilight is the point at
-which artificial light is recommended so we chose that as our indicator of Day/Night
+- Sunrise_Sunset, Civil_Twilight, Astronomical_Twilight - all mean similar things, we dont want to put extra weight on day/night
+differentiation. Nautical Twilight is the point at which artificial light is recommended so we chose that as our indicator of Day/Night
 #%%
 
 columns_to_drop = [
@@ -313,18 +298,17 @@ data_ori.drop(columns=columns_to_drop, inplace=True)  # inplace -> no need to st
 
 #%% md
 
-### 5.2 Drop missing values
+### 4.2 Drop missing values
 
 Checking for nan values in each column
 
 #%%
-# Assuming, that no TMC value means it is not a severe accident (not severe enough to be mentioned)
-# Therefore, replacing the NaN values in TMC with 0
+# Assumption: no TMC value means it is not a severe accident (not severe enough to be noted)
+# Therefore, replacing the NaN values in TMC column with 0
 data_ori['TMC'].replace(np.NAN, 0, inplace=True)
 data_ori['TMC'].value_counts()
 
 #%%
-
 # Checking for number of nan values in columns
 new_col_list = []  # 39 cols
 for col in column_list:
@@ -337,7 +321,8 @@ for col in new_col_list:
         print(col, nan_sum)
 
 #%% md
-13 cols contain nan values
+13 columns contain nan values:
+
 - City: 137
 - Zipcode 1292
 - Temperature(F) 89900
@@ -388,9 +373,9 @@ print(len(data_ori))
 
 #%% md
 
-### 5.4 Value Transformation
+### 4.3 Value Transformation
 
-#### 5.4.1 Zip Code
+#### 4.3.1 Zip Code
 
 Formatting all zipcodes in dataset to contain 5 digits only - basic US zipcode format. The extended ZIP+4 code present
 in a few of the rows is not necessary for our analysis.
@@ -402,7 +387,7 @@ data_ori['Zipcode'] = data_ori['Zipcode'].str[:5]
 
 #%% md
 
-#### 5.4.2 Unit conversion to SI units
+#### 4.3.2 Unit conversion to SI units
 
 Convert from US to SI units and create a new column for each
 #%%
@@ -435,7 +420,7 @@ data_ori.drop(columns=columns_to_drop, inplace=True)
 
 #%% md
 
-#### 5.4.3 Timestamp transformation
+#### 4.3.3 Timestamp transformation
 
 #%%
 
@@ -451,7 +436,7 @@ data_ori['Hour'] = data_ori['Start_Time'].dt.hour
 
 #%% md
 
-#### 5.4.4 Wind direction transformation
+#### 4.3.4 Wind direction transformation
 Converting overlapping values. For example: 'S' & 'South' mean the same thing so 'South' will be transformed to 'S'.
 Transformations based on wind_values dict.
 
@@ -462,14 +447,14 @@ data_ori["Wind_Direction"].replace(wind_values, inplace=True)
 #%% md
 
 ---
-## 6 Exploratory Data Analysis
+## 5 Exploratory Data Analysis
 
 #%%
 # Copy original dataset and work with the new data_prep
 data_prep = data_ori.copy(deep=True)
 
 #%% md
-### 6.1 Univariate Non-Graphical
+### 5.1 Univariate Non-Graphical
 
 #%%
 
@@ -489,7 +474,7 @@ data_prep.describe()
 
 #%% md
 
-### 6.2 Univariate Graphical
+### 5.2 Univariate Graphical
 
 Histogram of accidents of the biggest cities
 #%%
@@ -694,7 +679,7 @@ data_prep.State.value_counts().plot(kind='bar', figsize=(12, 6), color="#173F74"
 plt.show()
 
 #%% md
-Pie diagram of severity
+Pie chart of severity
 
 #%%
 fig = plt.figure(figsize=[10, 10])
@@ -711,7 +696,7 @@ plt.show()
 
 #%% md
 
-### 6.3 Multivariate Non-Graphical
+### 5.3 Multivariate Non-Graphical
 
 #%%
 
@@ -720,7 +705,7 @@ data_prep.corr()
 
 #%% md
 
-### 6.4 Multivariate Graphical
+### 5.4 Multivariate Graphical
 
 #%% md
 Correlogram
@@ -758,34 +743,24 @@ plt.title("Location of all accidents in the USA in the time from 2016 to 2020, d
 plt.show()
 
 
-
-#%%
-
-#import plotly.express as px
-#fig = px.scatter(data_prep, x="Start_Lng", y="Start_Lat", color="Year", facet_col="Severity", facet_row="Nautical_Twilight")
-#fig.show()
-
 #%% md
 
-### 6.5 Comparison of 2019 with 2020
-
-#### 6.5.1 Preparation Part 1
+### 5.5 Comparison of 2019 with 2020
 
 #%%
 
 data_prep_wo_bias = data_prep.copy(deep=True)
 
 # dropping states which cause huge bias
-
 data_prep_wo_bias = data_prep_wo_bias[data_prep_wo_bias['State'] != 'CA']
 data_prep_wo_bias = data_prep_wo_bias[data_prep_wo_bias['State'] != 'FL']
 
 
 #%% md
 
-#### 6.5.2
+#### 5.5.1 Preparation Part 1
 #%% md
-Graph of number of accidents per state to show backlog
+Graph of number of accidents per state to show backlog. A result of a huge number of accidents being logged after their 'true dates'.
 
 #%%
 plt.style.use('ggplot')
@@ -834,7 +809,7 @@ plt.show()
 
 #%% md
 
-#### 6.5.3 Preparation Part 2
+#### 5.5.2 Preparation Part 2
 
 Splitting into first half of 2019 and first half of 2020
 
@@ -852,7 +827,7 @@ data_prep_wo_bias_2019_h1 = data_prep_wo_bias_2019_h1[data_prep_wo_bias_2019_h1.
 
 #%% md
 
-#### 6.5.4 Rerun the existing graphs with the reduced data set
+#### 5.5.3 Rerun the existing graphs with the reduced data set
 
 #%% md
 Stacked histogram of Hour colored by Severity in 2019 H1
@@ -885,7 +860,7 @@ plt.yticks(fontsize=18)
 plt.show()
 
 #%% md
-Stacked histogram of Hour colored by Severity in 2020 H1
+Stacked histogram of Hour colored by Severity in 2020
 
 #%%
 # Prepare data
@@ -915,7 +890,7 @@ plt.yticks(fontsize=18)
 plt.show()
 
 #%% md
-Stacked histogram of Weekday colored by Severity in 2019 H1
+Stacked histogram of Weekday colored by Severity in 2019
 
 #%%
 # Prepare data
@@ -943,7 +918,7 @@ plt.yticks(fontsize=18)
 plt.show()
 
 #%% md
-Stacked histogram of Weekday colored by Severity in 2020 H1
+Stacked histogram of Weekday colored by Severity in 2020
 
 #%%
 # Prepare data
@@ -971,7 +946,7 @@ plt.yticks(fontsize=18)
 plt.show()
 
 #%% md
-US map: scatterplot based on latitude and longitude data for 2019 H1
+US map: scatterplot based on latitude and longitude data for 2019
 
 #%%
 plt.figure(figsize=(16, 9))
@@ -981,7 +956,7 @@ plt.title("Location of all accidents in the USA in the first half of 2019, disti
 plt.show()
 
 #%% md
-US map: scatterplot based on latitude and longitude data for 2020 H1
+US map: scatterplot based on latitude and longitude data for 2020
 
 #%%
 plt.figure(figsize=(16, 9))
@@ -991,7 +966,7 @@ plt.title("Location of all accidents in the USA in the first half of 2020, disti
 plt.show()
 
 #%% md
-Stacked histogram of Week colored by Severity in 2019 H1
+Stacked histogram of Week colored by Severity in 2019
 
 #%%
 # Prepare data
@@ -1020,7 +995,7 @@ plt.yticks(fontsize=18)
 plt.show()
 
 #%% md
-Stacked histogram of Week colored by Severity in 2020 H1
+Stacked histogram of Week colored by Severity in 2020
 
 #%%
 # Prepare data
@@ -1070,7 +1045,7 @@ plt.show()
 #%% md
 
 ---
-## 7 Feature Engineering
+## 6 Feature Engineering
 
 #%%
 
@@ -1091,17 +1066,13 @@ data_encoding.head()
 data_encoding['Severity'].value_counts()
 #%% md
 
-### 7.1 Type Conversion
+### 6.1 Type Conversion
 
-- attempt freq encoding for Counties
-    - attempt ordinal encoding for Streets, Cities
-    - one hot encoding for States
-    - binary:
+#### 6.1.1 Ordinal Encoding
 
-#### 7.1.1 Ordinal Encoding
-
+Ordinal encoding for streets and cities
 #%%
-# Ordinal encoding instead of frequency encoding -> time reasons
+# Ordinal encoding instead of frequency encoding -> frequency encoding takes too long on current device
 ordinal_encoder = OrdinalEncoder()
 
 data_encoding[['Street']] = ordinal_encoder.fit_transform(data_encoding[['Street']])
@@ -1112,7 +1083,7 @@ print(ordinal_encoder.categories_)
 
 #%% md
 
-#### 7.1.2 'Binary' Encoding
+#### 6.1.2 'Binary' Encoding
 Ordinal encoding for Nautical_Twilight with Day/Night values to bool
 Ordinal encoding for Side (Left/Right) to bool
 ... bool_columns
@@ -1135,8 +1106,9 @@ for column in bool_columns:
 
 #%% md
 
-#### 7.1.3 OneHot Encoding
+#### 6.1.3 OneHot Encoding
 
+For states and wind direction
 #%%
 # Initialize encoder
 ohc = OneHotEncoder()
@@ -1164,6 +1136,7 @@ one_hot_data.drop(one_hot_data.columns[-1], axis=1, inplace=True)
 # combining ohc dataframe to previous df
 data_encoding = pd.concat([data_encoding, one_hot_data], axis=1)
 
+#removing original column
 data_encoding.drop('State', axis=1, inplace=True)
 data_encoding.head()
 
@@ -1192,13 +1165,14 @@ one_hot_data.drop(one_hot_data.columns[-1], axis=1, inplace=True)
 # combining ohc dataframe to previous df
 data_encoding = pd.concat([data_encoding, one_hot_data], axis=1)
 
+#removing original column
 data_encoding.drop('Wind_Direction', axis=1, inplace=True)
 data_encoding.head()
 
 #%% md
 
-#### 7.1.4 Manual Encoding
-
+#### 6.1.4 Manual Encoding
+For Weather Condition
 #%%
 # Initialize OneHotEncoder
 one_hot_encoder = OneHotEncoder()
@@ -1252,7 +1226,7 @@ for column in data_one_hot:
 data_encoding.drop('Weather_Condition', axis=1, inplace=True)
 #%% md
 
-#### 7.1.5 Frequency encoding
+#### 6.1.5 Frequency encoding
 For County
 
 #%%
@@ -1267,13 +1241,9 @@ county_array = county_dict.keys()  # Keys from the dict are now arranged in desc
 county_encoder = OrdinalEncoder(categories=county_array)
 data_encoding[['County']] = ordinal_encoder.fit_transform(data_encoding[['County']])
 
-#%%
-# Real Freq Encoding -> takes a lot of time because of looping?
-# data_encoding['County'] = data_encoding['County'].replace(county_dict)
-
 #%% md
 
-### 7.2 Timestamp transformation (Unix)
+### 6.2 Timestamp transformation (Unix)
 Converting Start_Time to seconds from Unix Epoch.
 
 #%%
@@ -1287,7 +1257,7 @@ data_encoding.drop('Start_Time', axis=1, inplace=True)
 
 #%% md
 
-### 7.3 Normalization
+### 6.3 Normalization
 
 #%%
 
@@ -1306,17 +1276,15 @@ x = data_independent.values  # returns a numpy array with all the values of the 
 min_max_scaler = MinMaxScaler()
 x_scaled = min_max_scaler.fit_transform(x)
 
-# TODO:  restore column names. Irene: proposed change. But it might be taking longer than before
 data_independent = pd.DataFrame(x_scaled, index=data_independent.index, columns=data_independent.columns)
 data_independent.head()
 #%% md
 
 ---
-## 8 Model
-### 8.1 Partitioning the Data
+## 7 Model
+### 7.1 Partitioning the Data
 
 #%%
-
 # assign data
 X = data_independent
 Y = data_dependant
@@ -1326,7 +1294,7 @@ X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2, random_
 
 #%% md
 
-### 8.2 Sampling
+### 7.2 Sampling
 
 Training data
 #%%
@@ -1391,10 +1359,10 @@ Y_test = data_test_sampled['severity']
 
 #%% md
 
-### 8.3 Fitting
+### 7.3 Fitting
 #%% md
 
-How much does the inclusion of apples mobility value increase the accurancy of our prediction model?
+How much does the inclusion of apples mobility value increase the accuracy of our prediction model?
 LSTM-GBRT https://downloads.hindawi.com/journals/jcse/2020/4206919.pdf
 hybrid K-means and random forest https://link.springer.com/content/pdf/10.1007/s42452-020-3125-1.pdf
 OCT https://towardsdatascience.com/using-machine-learning-to-predict-car-accidents-44664c79c942
@@ -1404,7 +1372,7 @@ report = pd.DataFrame(columns=['Model', 'Mean Acc. Training', 'Standard Deviatio
 
 #%% md
 
-#### 8.3.1 KNN
+#### 7.3.1 KNN
 #%%
 
 knnmodel = KNeighborsClassifier(n_jobs=-1)
@@ -1413,6 +1381,7 @@ param_grid = {
     'n_neighbors': [3, 4, 5]
 }
 
+# find best hyperparameters
 CV_knnmodel = GridSearchCV(estimator=knnmodel, param_grid=param_grid, cv=10)
 CV_knnmodel.fit(X_train, Y_train)
 print(CV_knnmodel.best_params_)
@@ -1445,7 +1414,7 @@ plot_confusion_matrix(knnmodel, X_test, Y_test, labels=[2, 3, 4],
 
 #%% md
 
-#### 8.3.2 Decision Trees
+#### 7.3.2 Decision Trees
 #%%
 dtree_model = RandomForestClassifier(n_jobs=-1)
 
@@ -1454,6 +1423,7 @@ param_grid = {
     'max_depth': [5, 6, 7, 8]  # why not more? it is suggested that the best number of splits lie between 5-8
 }
 
+# find best hyperparameters
 CV_dtree_model = GridSearchCV(estimator=dtree_model, param_grid=param_grid, cv=10)
 CV_dtree_model.fit(X_train, Y_train)
 print(CV_dtree_model.best_params_)
@@ -1484,7 +1454,7 @@ print("Confusion Matrix Testing:\n", cmte)
 plot_confusion_matrix(dtree_model, X_test, Y_test, labels=[2, 3, 4], cmap=plt.cm.Blues, values_format='d')
 #%% md
 
-#### 8.3.3 Neural Networks
+#### 7.3.3 Neural Networks
 #%%
 nnetmodel = MLPClassifier(max_iter=400)
 
@@ -1493,6 +1463,7 @@ param_grid = {
     'activation': ['logistic', 'tanh', 'relu']
 }
 
+# find best hyperparameters
 CV_nnetmodel = GridSearchCV(estimator=nnetmodel, param_grid=param_grid, cv=10)
 CV_nnetmodel.fit(X_train, Y_train)
 print(CV_nnetmodel.best_params_)
@@ -1522,9 +1493,4 @@ print("Confusion Matrix Testing:\n", cmte)
 plot_confusion_matrix(nnetmodel, X_test, Y_test, labels=[2, 3, 4],
                       cmap=plt.cm.Blues, values_format='d')
 
-#%% md
-
-### 8.5 Prediction driving factors
-
-# SHAP diagram
 
