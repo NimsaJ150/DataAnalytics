@@ -949,7 +949,7 @@ plt.yticks(fontsize=18)
 plt.show()
 
 #%% md
-US map: scatterplot based on latitude and longitude data for 2019
+US map: Scatter plot based on latitude and longitude data for 2019
 
 #%%
 plt.figure(figsize=(16, 9))
@@ -959,7 +959,7 @@ plt.title("Location of all accidents in the USA in the first half of 2019, disti
 plt.show()
 
 #%% md
-US map: scatterplot based on latitude and longitude data for 2020
+US map: Scatter plot based on latitude and longitude data for 2020
 
 #%%
 plt.figure(figsize=(16, 9))
@@ -1027,7 +1027,7 @@ plt.yticks(fontsize=18)
 plt.show()
 
 #%% md
-Graph of number of accidents per state to show backlog
+Graph of number of accidents per state to show sharp increase
 
 #%%
 plt.style.use('ggplot')
@@ -1044,6 +1044,14 @@ ax.set_ylabel('Number of Accidents', color="#173F74", fontsize=18)
 ax.set_title("Development of accidents per week distinguished by the severity", fontsize=22)
 ax.legend(loc='center right', bbox_to_anchor=(1.12, 0.5), ncol=2, title="2019         2020")
 plt.show()
+
+#%% md
+Reasons for increase in data according to the author:
+
+The sharp jump in # of accidents is mostly related to one of the sources that provided accident data,
+which suddenly provided way more data than it used to provide in the past.
+Why does this happen? The traffic accident providers usually work with many agencies to get this data on a real-time basis, and at some point they might get the data from more or less sources, which could result in increase/decrease in # of accidents
+
 
 #%% md
 
@@ -1229,6 +1237,19 @@ for column in data_one_hot:
     replace(column, column, 0)
 
 data_encoding.drop('Weather_Condition', axis=1, inplace=True)
+
+#%% md
+note: the above section could have been done using a dictionary showing the values to replace the not dictionary
+for example:
+{
+    'mostly cloudy': 'cloudy',
+    'overcast': 'cloudy,
+    'scattered clouds' : 'cloudy'
+}
+and so on.
+However, we could not proceed with this because it would have taken too long on our computers to run the code.
+Doing this on the cloud would fix this problem.
+
 #%% md
 
 #### 6.1.5 Frequency encoding
