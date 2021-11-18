@@ -1,11 +1,8 @@
 # Intro to Data Analytics in Business
+Analysing Crash data in the United States
 
-- @Luke please check if you want to make changes to EDA section headings & subheadings
-
-
-TODO:
-- execute Repo (@JAsmin?)
-- upload executed notebook
+Dataset used:
+Found at: https://www.kaggle.com/sobhanmoosavi/us-accidents/version/8
 
 Project by
 - Jasmin Capka
