@@ -76,7 +76,7 @@ target/
 
 # Jupyter Notebook
 .ipynb_checkpoints
-example/traffic_data.ipynb
+project/traffic_data.ipynb
 
 # IPython
 profile_default/
@@ -131,4 +131,4 @@ dmypy.json
 
 # IntelliJ
 .idea
-/example/US_Accidents_Dec20_updated.csv
+/project/US_Accidents_Dec20_updated.csv

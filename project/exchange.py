@@ -41,6 +41,9 @@ file_path = './US_Accidents_Dec20.csv'
 # If file exists
 if os.path.isfile(file_path):
     data_ori = pd.read_csv(file_path)
+else:
+    print('Please download the dataset from the link provided above and'
+          'place it in the project folder with the name "US_Accidents_Dec20.csv".')
 
 #%% md
 
@@ -746,7 +749,7 @@ plt.show()
 #%% md
 
 ### 5.5 Comparison of 2019 with 2020
-
+#### 5.5.1 Preparation Part 1
 #%%
 
 data_prep_wo_bias = data_prep.copy(deep=True)
@@ -758,7 +761,7 @@ data_prep_wo_bias = data_prep_wo_bias[data_prep_wo_bias['State'] != 'FL']
 
 #%% md
 
-#### 5.5.1 Preparation Part 1
+#### 5.5.2 Graphical analysis
 #%% md
 Graph of number of accidents per state to show backlog. A result of a huge number of accidents being logged after their 'true dates'.
 
@@ -809,7 +812,7 @@ plt.show()
 
 #%% md
 
-#### 5.5.2 Preparation Part 2
+#### 5.5.3 Preparation Part 2
 
 Splitting into first half of 2019 and first half of 2020
 
@@ -827,7 +830,7 @@ data_prep_wo_bias_2019_h1 = data_prep_wo_bias_2019_h1[data_prep_wo_bias_2019_h1.
 
 #%% md
 
-#### 5.5.3 Rerun the existing graphs with the reduced data set
+#### 5.5.4 Rerun the existing graphs with the reduced data set
 
 #%% md
 Stacked histogram of Hour colored by Severity in 2019 H1
@@ -1086,7 +1089,7 @@ print(ordinal_encoder.categories_)
 #### 6.1.2 'Binary' Encoding
 Ordinal encoding for Nautical_Twilight with Day/Night values to bool
 Ordinal encoding for Side (Left/Right) to bool
-... bool_columns
+Ordinal encoding for POI columns (True/False) to bool
 
 #%%
 # L - 0, R - 1
@@ -1133,10 +1136,10 @@ one_hot_data = pd.DataFrame(one_hot_encoded, columns=column_names)
 # Delete one column to avoid the dummy variable trap
 one_hot_data.drop(one_hot_data.columns[-1], axis=1, inplace=True)
 
-# combining ohc dataframe to previous df
+# Combining ohc dataframe to previous df
 data_encoding = pd.concat([data_encoding, one_hot_data], axis=1)
 
-#removing original column
+# Removing original column
 data_encoding.drop('State', axis=1, inplace=True)
 data_encoding.head()
 
@@ -1146,7 +1149,7 @@ For Wind Direction
 #%%
 one_hot_encoded = ohc.fit_transform(data_encoding.Wind_Direction.values.reshape(-1, 1)).toarray()
 
-# generate array with correct column names
+# Generate array with correct column names
 categories = ohc.categories_
 column_names = []
 
@@ -1154,18 +1157,18 @@ for category in categories[0]:
     column_name = category
     column_names.append(column_name)
 
-# set correct column names
+# Set correct column names
 one_hot_data = pd.DataFrame(one_hot_encoded, columns=column_names)
 one_hot_data.head()
 
 #%%
-# delete one column to avoid the dummy variable trap
+# Delete one column to avoid the dummy variable trap
 one_hot_data.drop(one_hot_data.columns[-1], axis=1, inplace=True)
 
-# combining ohc dataframe to previous df
+# Combining ohc dataframe to previous df
 data_encoding = pd.concat([data_encoding, one_hot_data], axis=1)
 
-#removing original column
+# Removing original column
 data_encoding.drop('Wind_Direction', axis=1, inplace=True)
 data_encoding.head()
 
@@ -1194,6 +1197,7 @@ data_one_hot = pd.DataFrame(data_one_hot_array, columns=column_names)
 # Delete one column to avoid the dummy variable trap
 data_one_hot.drop(data_one_hot.columns[-1], axis=1, inplace=True)  # drop last n rows
 data_one_hot.head()
+
 #%%
 # Concatenate OneHot columns according to weather_value dict
 split_words = ['/', 'and', 'with', ' ']
@@ -1213,13 +1217,14 @@ def replace(value, split_value, split_index):
                 split_values = split_value.split(split_words[split_index])
                 for split_value in split_values:
                     split_value = split_value.strip()
+                    # Recursively call function
                     replace(value, split_value, split_index + 1)
             else:
                 print(split_value)
         except AttributeError or TypeError:
             print(str(value) + "!")
 
-
+# Call replace for each OneHot column
 for column in data_one_hot:
     replace(column, column, 0)
 
@@ -1263,7 +1268,7 @@ data_encoding.drop('Start_Time', axis=1, inplace=True)
 
 data_final = data_encoding.copy(deep=True)
 
-# divide columns into dependant and independent
+# Divide columns into dependant and independent
 data_independent = data_final.drop(['Severity'], axis=1)
 data_dependant = data_final[['Severity']]
 
@@ -1278,6 +1283,7 @@ x_scaled = min_max_scaler.fit_transform(x)
 
 data_independent = pd.DataFrame(x_scaled, index=data_independent.index, columns=data_independent.columns)
 data_independent.head()
+
 #%% md
 
 ---
@@ -1285,11 +1291,11 @@ data_independent.head()
 ### 7.1 Partitioning the Data
 
 #%%
-# assign data
+# Assign data
 X = data_independent
 Y = data_dependant
 
-# generate test and trainings set
+# Generate test and trainings set
 X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2, random_state=4)
 
 #%% md
@@ -1299,7 +1305,7 @@ X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2, random_
 Training data
 #%%
 
-# concatenate data for sampling
+# Concatenate data for sampling
 data_tbsampled = X_train.copy(deep=True)
 data_tbsampled['severity'] = Y_train
 
@@ -1309,7 +1315,7 @@ data_tbsampled.reset_index(inplace=True, drop=True)
 severity_values = Y_train['Severity'].value_counts()
 severity_values
 #%%
-# ensuring every severity level has equal proportions in the data
+# Ensuring every severity level has equal proportions in the data
 def balanced_subsample(y, size=None, random_state=None):  # returns a List with randomly chosen row numbers
     subsample = []
     if size is None:
@@ -1328,10 +1334,10 @@ def balanced_subsample(y, size=None, random_state=None):  # returns a List with 
 
     return subsample
 
-
 rows = balanced_subsample(data_tbsampled['severity'], size=20000, random_state=0)
 
 #%%
+# Split data again
 data_downsampled = data_tbsampled.iloc[rows, :]
 
 X_train = data_downsampled.drop('severity', axis=1)
@@ -1343,31 +1349,27 @@ Test Data
 #%%
 # Making sure train Y has the same number of rows
 
-# concatenate data for sampling
+# Concatenate data for sampling
 data_test_tbsampled = X_test.copy(deep=True)
 data_test_tbsampled['severity'] = Y_test
 
 data_test_tbsampled.reset_index(inplace=True, drop=True)
 
 #%%
+# Stratified resampling
 data_test_sampled = resample(data_test_tbsampled, replace=False, n_samples=2000, random_state=0)
 
 #%%
-
+# Split data again
 X_test = data_test_sampled.drop('severity', axis=1)
 Y_test = data_test_sampled['severity']
 
 #%% md
 
 ### 7.3 Fitting
-#%% md
 
-How much does the inclusion of apples mobility value increase the accuracy of our prediction model?
-LSTM-GBRT https://downloads.hindawi.com/journals/jcse/2020/4206919.pdf
-hybrid K-means and random forest https://link.springer.com/content/pdf/10.1007/s42452-020-3125-1.pdf
-OCT https://towardsdatascience.com/using-machine-learning-to-predict-car-accidents-44664c79c942
-Regression-kriging https://carto.com/blog/predicting-traffic-accident-hotspots-with-spatial-data-science/
 #%%
+# Create report df
 report = pd.DataFrame(columns=['Model', 'Mean Acc. Training', 'Standard Deviation', 'Acc. Test'])
 
 #%% md
@@ -1381,21 +1383,22 @@ param_grid = {
     'n_neighbors': [3, 4, 5]
 }
 
-# find best hyperparameters
+# Find best hyperparameters
 CV_knnmodel = GridSearchCV(estimator=knnmodel, param_grid=param_grid, cv=10)
 CV_knnmodel.fit(X_train, Y_train)
 print(CV_knnmodel.best_params_)
 
-# use the best parameters
+# Use the best parameters
 knnmodel = knnmodel.set_params(**CV_knnmodel.best_params_)
 knnmodel.fit(X_train, Y_train)
 
 #%%
+# Predict training data
 Y_test_pred = knnmodel.predict(X_test)
 acctest = accuracy_score(Y_test, Y_test_pred)
 
 #%%
-# fill report
+# Fill report
 report.loc[len(report)] = ['k-NN (grid)',
                            CV_knnmodel.cv_results_['mean_test_score'][CV_knnmodel.best_index_],
                            CV_knnmodel.cv_results_['std_test_score'][CV_knnmodel.best_index_],
@@ -1403,7 +1406,7 @@ report.loc[len(report)] = ['k-NN (grid)',
 print(report.loc[len(report) - 1])
 
 #%%
-# visualize confusion matrix
+# Visualize confusion matrix
 
 cmte = confusion_matrix(Y_test, Y_test_pred)
 print("Confusion Matrix Testing:\n", cmte)
@@ -1420,24 +1423,25 @@ dtree_model = RandomForestClassifier(n_jobs=-1)
 
 param_grid = {
     'n_estimators': [50, 100, 150],
-    'max_depth': [5, 6, 7, 8]  # why not more? it is suggested that the best number of splits lie between 5-8
+    'max_depth': [5, 6, 7, 8]  # why not more? -> it is suggested that the best number of splits lie between 5-8
 }
 
-# find best hyperparameters
+# Find best hyperparameters
 CV_dtree_model = GridSearchCV(estimator=dtree_model, param_grid=param_grid, cv=10)
 CV_dtree_model.fit(X_train, Y_train)
 print(CV_dtree_model.best_params_)
 
-# use the best parameters
+# Use the best parameters
 dtree_model = dtree_model.set_params(**CV_dtree_model.best_params_)
 dtree_model.fit(X_train, Y_train)
+
 #%%
-# predict test data
+# Predict test data
 Y_test_pred = dtree_model.predict(X_test)
 acctest = accuracy_score(Y_test, Y_test_pred)
 
 #%%
-# fill report
+# Fill report
 report.loc[len(report)] = ['Random Forest Classifier (grid)',
                            CV_dtree_model.cv_results_['mean_test_score'][CV_dtree_model.best_index_],
                            CV_dtree_model.cv_results_['std_test_score'][CV_dtree_model.best_index_],
@@ -1445,7 +1449,7 @@ report.loc[len(report)] = ['Random Forest Classifier (grid)',
 print(report.loc[len(report) - 1])
 
 #%%
-# visualize confusion matrix
+# Visualize confusion matrix
 
 cmte = confusion_matrix(Y_test, Y_test_pred)
 print("Confusion Matrix Testing:\n", cmte)
@@ -1463,12 +1467,12 @@ param_grid = {
     'activation': ['logistic', 'tanh', 'relu']
 }
 
-# find best hyperparameters
+# Find best hyperparameters
 CV_nnetmodel = GridSearchCV(estimator=nnetmodel, param_grid=param_grid, cv=10)
 CV_nnetmodel.fit(X_train, Y_train)
 print(CV_nnetmodel.best_params_)
 
-# use the best parameters
+# Use the best parameters
 nnetmodel = nnetmodel.set_params(**CV_nnetmodel.best_params_)
 nnetmodel.fit(X_train, Y_train)
 
@@ -1477,7 +1481,7 @@ Y_test_pred = nnetmodel.predict(X_test)
 acctest = accuracy_score(Y_test, Y_test_pred)
 
 #%%
-# fill report
+# Fill report
 report.loc[len(report)] = ['Neural Networks (grid)',
                            CV_nnetmodel.cv_results_['mean_test_score'][CV_nnetmodel.best_index_],
                            CV_nnetmodel.cv_results_['std_test_score'][CV_nnetmodel.best_index_],
@@ -1485,12 +1489,11 @@ report.loc[len(report)] = ['Neural Networks (grid)',
 print(report.loc[len(report) - 1])
 
 #%%
-# visualize confusion matrix
+# Visualize confusion matrix
 cmte = confusion_matrix(Y_test, Y_test_pred)
 print("Confusion Matrix Testing:\n", cmte)
 
 #%%
 plot_confusion_matrix(nnetmodel, X_test, Y_test, labels=[2, 3, 4],
                       cmap=plt.cm.Blues, values_format='d')
-
 
